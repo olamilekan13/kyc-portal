@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(php artisan:*)",
+      "Bash(php -l:*)",
+      "Bash(composer show:*)",
+      "Bash(find:*)",
+      "Bash(php -m:*)",
+      "Bash(php --ini:*)",
+      "Read(//c/xampp/php/**)",
+      "Bash(php -r:*)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill:*)",
+      "Bash(mysql:*)"
     ],
     "deny": [],
     "ask": []
