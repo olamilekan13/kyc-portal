@@ -16,7 +16,7 @@ class AdminUserSeeder extends Seeder
     {
         // Create or update admin user
         User::updateOrCreate(
-            ['email' => 'admin@kyc-portal.com'],
+            ['email' => 'admin@kyc.com'],
             [
                 'name' => 'Admin User',
                 'password' => Hash::make('password'),
@@ -26,7 +26,7 @@ class AdminUserSeeder extends Seeder
         );
 
         $this->command->info('Admin user created/updated successfully!');
-        $this->command->info('Email: admin@kyc-portal.com');
+        $this->command->info('Email: admin@kyc.com');
         $this->command->info('Password: password');
         $this->command->info('Role: super_admin');
     }
