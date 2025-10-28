@@ -213,6 +213,28 @@ class KycSubmissionController extends Controller
                     $fieldRules[] = 'max:20';
                     break;
 
+                case 'nin':
+                    // NIN must be 11 digits
+                    $fieldRules[] = 'string';
+                    $fieldRules[] = 'regex:/^\d{11}$/';
+                    $fieldRules[] = 'size:11';
+
+                    // Validate that NIN was verified (check hidden field)
+                    if ($field->is_required) {
+                        $rules[$field->field_name . '_verified'] = ['required', 'in:1'];
+                    }
+                    break;
+
+                case 'liveness_selfie':
+                    // Liveness selfie must be base64 encoded image
+                    $fieldRules[] = 'string';
+
+                    // Validate that liveness was verified (check hidden field)
+                    if ($field->is_required) {
+                        $rules[$field->field_name . '_verified'] = ['required', 'in:1'];
+                    }
+                    break;
+
                 case 'file':
                     if ($field->is_required) {
                         $fieldRules[] = 'file';

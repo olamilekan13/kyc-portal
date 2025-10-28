@@ -111,6 +111,253 @@ class YouVerifyService
     }
 
     /**
+     * Verify NIN (National Identification Number) through YouVerify API
+     *
+     * Verifies a Nigerian National Identification Number and returns
+     * the associated identity information including photo, DOB, etc.
+     *
+     * @param string $nin The 11-digit National Identification Number
+     * @return array{success: bool, verified: bool, data?: array, error?: string, message?: string}
+     *
+     * @throws Exception If NIN verification encounters an error
+     */
+    public function verifyNIN(string $nin): array
+    {
+        try {
+            // Validate NIN format (11 digits)
+            if (!preg_match('/^\d{11}$/', $nin)) {
+                Log::warning('YouVerify NIN verification failed: Invalid format', [
+                    'nin' => $nin,
+                ]);
+
+                return [
+                    'success' => false,
+                    'verified' => false,
+                    'error' => 'Invalid NIN format',
+                    'message' => 'NIN must be exactly 11 digits',
+                ];
+            }
+
+            // Build API payload
+            $payload = [
+                'id' => $nin,
+                'isSubjectConsent' => true, // Required for data protection compliance
+            ];
+
+            // Log the verification request
+            Log::info('YouVerify NIN verification initiated', [
+                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2), // Masked for privacy
+            ]);
+
+            // Make API request to YouVerify NIN endpoint
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ])
+                ->timeout(30)
+                ->post($this->baseUrl . '/v2/identities/nin', $payload);
+
+            // Handle response
+            $responseData = $response->json();
+            $statusCode = $response->status();
+
+            if ($response->successful() && isset($responseData['success']) && $responseData['success'] === true) {
+                Log::info('YouVerify NIN verification successful', [
+                    'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
+                    'response_status' => $statusCode,
+                ]);
+
+                return [
+                    'success' => true,
+                    'verified' => true,
+                    'data' => $responseData['data'] ?? $responseData,
+                    'message' => 'NIN verified successfully',
+                ];
+            }
+
+            // Verification failed
+            Log::warning('YouVerify NIN verification failed', [
+                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
+                'status_code' => $statusCode,
+                'response' => $responseData,
+            ]);
+
+            return [
+                'success' => false,
+                'verified' => false,
+                'data' => $responseData,
+                'error' => $responseData['message'] ?? 'NIN verification failed',
+                'message' => 'The NIN could not be verified. Please check and try again.',
+            ];
+        } catch (RequestException $e) {
+            Log::error('YouVerify NIN verification HTTP error', [
+                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
+                'error' => $e->getMessage(),
+                'response' => $e->response?->json(),
+            ]);
+
+            return [
+                'success' => false,
+                'verified' => false,
+                'error' => 'API request failed: ' . $e->getMessage(),
+                'message' => 'Failed to connect to verification service. Please try again later.',
+            ];
+        } catch (Exception $e) {
+            Log::error('YouVerify NIN verification error', [
+                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'verified' => false,
+                'error' => $e->getMessage(),
+                'message' => 'An unexpected error occurred during NIN verification.',
+            ];
+        }
+    }
+
+    /**
+     * Verify liveness selfie and match with NIN photo
+     *
+     * Performs liveness detection on a selfie image and optionally
+     * compares it with the photo from NIN verification.
+     *
+     * @param string $selfieBase64 Base64 encoded selfie image
+     * @param string|null $ninPhoto Base64 or URL of NIN photo for face matching
+     * @return array{success: bool, verified: bool, data?: array, error?: string, message?: string}
+     *
+     * @throws Exception If liveness verification encounters an error
+     */
+    public function verifyLiveness(string $selfieBase64, ?string $ninPhoto = null): array
+    {
+        try {
+            // Validate base64 image
+            if (!$this->isValidBase64Image($selfieBase64)) {
+                Log::warning('YouVerify liveness verification failed: Invalid image format');
+
+                return [
+                    'success' => false,
+                    'verified' => false,
+                    'error' => 'Invalid image format',
+                    'message' => 'The selfie image format is invalid. Please try again.',
+                ];
+            }
+
+            // Build API payload
+            $payload = [
+                'image' => $selfieBase64,
+                'isSubjectConsent' => true,
+            ];
+
+            // Add reference photo for face matching if provided
+            if ($ninPhoto) {
+                $payload['referenceImage'] = $ninPhoto;
+            }
+
+            // Log the verification request
+            Log::info('YouVerify liveness verification initiated', [
+                'has_reference_image' => !empty($ninPhoto),
+            ]);
+
+            // Make API request to YouVerify liveness endpoint
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ])
+                ->timeout(60) // Longer timeout for image processing
+                ->post($this->baseUrl . '/v2/identities/faces/liveness', $payload);
+
+            // Handle response
+            $responseData = $response->json();
+            $statusCode = $response->status();
+
+            if ($response->successful() && isset($responseData['success']) && $responseData['success'] === true) {
+                $data = $responseData['data'] ?? [];
+                $isLive = $data['isLive'] ?? false;
+                $faceMatch = $data['faceMatch'] ?? null;
+
+                Log::info('YouVerify liveness verification successful', [
+                    'is_live' => $isLive,
+                    'face_match_score' => $faceMatch,
+                    'response_status' => $statusCode,
+                ]);
+
+                return [
+                    'success' => true,
+                    'verified' => $isLive && ($ninPhoto ? ($faceMatch >= 0.7) : true), // 70% match threshold
+                    'data' => $data,
+                    'message' => 'Liveness verification successful',
+                ];
+            }
+
+            // Verification failed
+            Log::warning('YouVerify liveness verification failed', [
+                'status_code' => $statusCode,
+                'response' => $responseData,
+            ]);
+
+            return [
+                'success' => false,
+                'verified' => false,
+                'data' => $responseData,
+                'error' => $responseData['message'] ?? 'Liveness verification failed',
+                'message' => 'The liveness check failed. Please ensure you are in a well-lit area and try again.',
+            ];
+        } catch (RequestException $e) {
+            Log::error('YouVerify liveness verification HTTP error', [
+                'error' => $e->getMessage(),
+                'response' => $e->response?->json(),
+            ]);
+
+            return [
+                'success' => false,
+                'verified' => false,
+                'error' => 'API request failed: ' . $e->getMessage(),
+                'message' => 'Failed to connect to verification service. Please try again later.',
+            ];
+        } catch (Exception $e) {
+            Log::error('YouVerify liveness verification error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'verified' => false,
+                'error' => $e->getMessage(),
+                'message' => 'An unexpected error occurred during liveness verification.',
+            ];
+        }
+    }
+
+    /**
+     * Validate base64 encoded image
+     *
+     * @param string $base64String The base64 string to validate
+     * @return bool True if valid base64 image
+     */
+    protected function isValidBase64Image(string $base64String): bool
+    {
+        // Remove data URI scheme if present
+        $base64String = preg_replace('/^data:image\/\w+;base64,/', '', $base64String);
+
+        // Check if it's valid base64
+        if (!base64_decode($base64String, true)) {
+            return false;
+        }
+
+        // Decode and check if it's a valid image
+        $imageData = base64_decode($base64String);
+        $imageInfo = @getimagesizefromstring($imageData);
+
+        return $imageInfo !== false;
+    }
+
+    /**
      * Verify document through YouVerify API
      *
      * Uploads and verifies a document (e.g., ID card, passport, driver's license)

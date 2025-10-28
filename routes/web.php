@@ -1,10 +1,23 @@
 <?php
 
+use App\Http\Controllers\Api\LivenessVerificationController;
+use App\Http\Controllers\Api\NinVerificationController;
 use App\Http\Controllers\KycSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+// API Routes for AJAX requests
+Route::prefix('api')->name('api.')->group(function () {
+    // NIN Verification endpoint (rate limited: 5 per minute)
+    Route::post('/nin/verify', [NinVerificationController::class, 'verify'])
+        ->name('nin.verify');
+
+    // Liveness Selfie Verification endpoint (rate limited: 3 per minute)
+    Route::post('/liveness/verify', [LivenessVerificationController::class, 'verify'])
+        ->name('liveness.verify');
 });
 
 // Public KYC Submission Routes

@@ -70,6 +70,12 @@ class KycFormResource extends Resource
                                     ->searchable()
                                     ->label('Field Type')
                                     ->live()
+                                    ->disabled(fn (Get $get): bool => in_array($get('field_type'), ['nin', 'liveness_selfie']))
+                                    ->helperText(fn (Get $get): ?string =>
+                                        in_array($get('field_type'), ['nin', 'liveness_selfie'])
+                                            ? '⚠️ This field type cannot be changed as it has special functionality.'
+                                            : null
+                                    )
                                     ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                         // Auto-generate field_name from field_label if not manually edited
                                         $fieldLabel = $get('field_label');
@@ -94,7 +100,12 @@ class KycFormResource extends Resource
                                     ->required()
                                     ->label('Field Name/ID')
                                     ->placeholder('e.g., first_name')
-                                    ->helperText('Use lowercase, no spaces (e.g., first_name)')
+                                    ->helperText(fn (Get $get): string =>
+                                        in_array($get('field_type'), ['nin', 'liveness_selfie'])
+                                            ? '⚠️ This field name cannot be changed for special field types.'
+                                            : 'Use lowercase, no spaces (e.g., first_name)'
+                                    )
+                                    ->disabled(fn (Get $get): bool => in_array($get('field_type'), ['nin', 'liveness_selfie']))
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, Set $set) {
                                         // Clean the field name: lowercase, no spaces, alphanumeric + underscores only

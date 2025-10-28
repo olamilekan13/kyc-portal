@@ -213,6 +213,222 @@
                                 </div>
                                 @break
 
+                            {{-- NIN Input with Auto-Verification --}}
+                            @case('nin')
+                                <div class="space-y-2">
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="{{ $field->field_name }}"
+                                            name="{{ $field->field_name }}"
+                                            value="{{ old($field->field_name) }}"
+                                            {{ $field->is_required ? 'required' : '' }}
+                                            x-model="value"
+                                            @input="validateNINAndAutoVerify"
+                                            maxlength="11"
+                                            pattern="\d{11}"
+                                            class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 @error($field->field_name) border-red-500 @enderror"
+                                            :class="{
+                                                'border-red-500 focus:ring-red-500': hasError,
+                                                'border-green-500 focus:ring-green-500': ninVerified,
+                                                'border-blue-300 focus:ring-blue-300': verifying
+                                            }"
+                                            placeholder="Enter 11-digit NIN"
+                                            :readonly="ninVerified"
+                                        >
+
+                                        <!-- Status Icons -->
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                            <!-- Verifying Spinner -->
+                                            <svg x-show="verifying" class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+
+                                            <!-- Verified Checkmark -->
+                                            <svg x-show="ninVerified" class="h-6 w-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                            </svg>
+
+                                            <!-- Error Icon -->
+                                            <svg x-show="verificationError && !verifying" class="h-6 w-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+
+                                    <!-- Verification Status Messages (Under Field) -->
+                                    <div x-show="verifying" class="text-sm text-blue-600 flex items-center">
+                                        <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span>Verifying NIN...</span>
+                                    </div>
+
+                                    <div x-show="ninVerified" class="text-sm text-green-600 flex items-center">
+                                        <svg class="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span>NIN verified successfully. Information auto-filled.</span>
+                                    </div>
+
+                                    <div x-show="verificationError && !verifying" class="text-sm text-red-600 flex items-start">
+                                        <svg class="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <span x-text="verificationError"></span>
+                                    </div>
+
+                                    <!-- Hidden field to store verification status -->
+                                    <input type="hidden" :name="'{{ $field->field_name }}_verified'" :value="ninVerified ? '1' : '0'">
+                                    <input type="hidden" name="{{ $field->field_name }}_verification_data" x-model="ninVerificationData">
+                                </div>
+                                @break
+
+                            {{-- Liveness Selfie with Webcam --}}
+                            @case('liveness_selfie')
+                                <div class="space-y-4">
+                                    <!-- Camera Preview or Captured Image -->
+                                    <div class="relative bg-gray-900 rounded-lg overflow-hidden" style="max-height: 400px; aspect-ratio: 16/9;">
+                                        <!-- Webcam Video Stream -->
+                                        <video
+                                            x-show="!selfieCapture && cameraActive"
+                                            x-ref="webcam"
+                                            autoplay
+                                            playsinline
+                                            class="w-full h-full object-cover"
+                                        ></video>
+
+                                        <!-- Captured Selfie Preview -->
+                                        <img
+                                            x-show="selfieCapture"
+                                            :src="selfieCapture"
+                                            alt="Captured selfie"
+                                            class="w-full h-full object-cover"
+                                        >
+
+                                        <!-- Placeholder when camera is off -->
+                                        <div x-show="!cameraActive && !selfieCapture" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                                            <svg class="w-20 h-20 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            <p class="text-sm">Click "Start Camera" to begin</p>
+                                        </div>
+
+                                        <!-- Camera guide overlay -->
+                                        <div x-show="cameraActive && !selfieCapture" class="absolute inset-0 pointer-events-none">
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <div class="w-64 h-80 border-4 border-white/50 rounded-full"></div>
+                                            </div>
+                                            <div class="absolute bottom-4 left-0 right-0 text-center">
+                                                <p class="text-white text-sm bg-black/50 inline-block px-4 py-2 rounded-full">
+                                                    Position your face within the oval
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Verifying Overlay -->
+                                        <div x-show="verifyingLiveness" class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
+                                            <svg class="animate-spin h-12 w-12 text-white mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <p class="text-white text-sm">Verifying liveness...</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Camera Controls -->
+                                    <div class="flex flex-wrap gap-2 justify-center">
+                                        <!-- Start Camera Button -->
+                                        <button
+                                            type="button"
+                                            @click="startCamera"
+                                            x-show="!cameraActive && !selfieCapture"
+                                            class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors inline-flex items-center"
+                                        >
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                            </svg>
+                                            Start Camera
+                                        </button>
+
+                                        <!-- Capture Button -->
+                                        <button
+                                            type="button"
+                                            @click="captureSelfie"
+                                            x-show="cameraActive && !selfieCapture"
+                                            class="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors inline-flex items-center"
+                                        >
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            Capture Selfie
+                                        </button>
+
+                                        <!-- Retake Button -->
+                                        <button
+                                            type="button"
+                                            @click="retakeSelfie"
+                                            x-show="selfieCapture && !livenessVerified"
+                                            class="px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors inline-flex items-center"
+                                        >
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                            </svg>
+                                            Retake
+                                        </button>
+
+                                        <!-- Verify Button -->
+                                        <button
+                                            type="button"
+                                            @click="verifyLiveness"
+                                            x-show="selfieCapture && !livenessVerified && !verifyingLiveness"
+                                            class="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors inline-flex items-center"
+                                        >
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            Verify Liveness
+                                        </button>
+                                    </div>
+
+                                    <!-- Verification Status Messages -->
+                                    <div x-show="livenessVerified" class="flex items-start p-3 bg-green-50 border border-green-200 rounded-lg">
+                                        <svg class="h-5 w-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <div class="text-sm text-green-800">
+                                            <p class="font-medium">Liveness Verified Successfully</p>
+                                            <p class="text-xs mt-1" x-show="faceMatchScore">Face match score: <span x-text="(faceMatchScore * 100).toFixed(0) + '%'"></span></p>
+                                        </div>
+                                    </div>
+
+                                    <div x-show="livenessError" class="flex items-start p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <svg class="h-5 w-5 text-red-500 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <div class="text-sm text-red-800">
+                                            <p class="font-medium">Verification Failed</p>
+                                            <p class="text-xs mt-1" x-text="livenessError"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Hidden fields -->
+                                    <input type="hidden" name="{{ $field->field_name }}" x-model="selfieCapture">
+                                    <input type="hidden" :name="'{{ $field->field_name }}_verified'" :value="livenessVerified ? '1' : '0'">
+                                    <input type="hidden" name="{{ $field->field_name }}_verification_data" x-model="livenessVerificationData">
+                                    <canvas x-ref="canvas" class="hidden"></canvas>
+                                </div>
+                                @break
+
                             {{-- Textarea --}}
                             @case('textarea')
                                 <div class="relative">
@@ -426,8 +642,267 @@ function fieldData{{ $index }}() {
         fileSizeError: false,
         dragging: false,
 
+        // NIN verification specific
+        ninVerified: false,
+        verifying: false,
+        verificationError: '',
+        ninVerificationData: '',
+
+        // Liveness selfie specific
+        cameraActive: false,
+        selfieCapture: '',
+        livenessVerified: false,
+        verifyingLiveness: false,
+        livenessError: '',
+        livenessVerificationData: '',
+        faceMatchScore: null,
+        stream: null,
+
         init() {
             // Initialize any field-specific logic
+        },
+
+        // Start webcam
+        async startCamera() {
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+
+                this.$refs.webcam.srcObject = this.stream;
+                this.cameraActive = true;
+                this.livenessError = '';
+            } catch (error) {
+                console.error('Camera access error:', error);
+                this.livenessError = 'Unable to access camera. Please ensure you have granted camera permissions.';
+            }
+        },
+
+        // Capture selfie from webcam
+        captureSelfie() {
+            const video = this.$refs.webcam;
+            const canvas = this.$refs.canvas;
+            const context = canvas.getContext('2d');
+
+            // Set canvas dimensions to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert to base64
+            this.selfieCapture = canvas.toDataURL('image/jpeg', 0.8);
+
+            // Stop camera
+            this.stopCamera();
+        },
+
+        // Retake selfie
+        retakeSelfie() {
+            this.selfieCapture = '';
+            this.livenessVerified = false;
+            this.livenessError = '';
+            this.faceMatchScore = null;
+            this.startCamera();
+        },
+
+        // Stop camera
+        stopCamera() {
+            if (this.stream) {
+                this.stream.getTracks().forEach(track => track.stop());
+                this.stream = null;
+            }
+            this.cameraActive = false;
+        },
+
+        // Verify liveness with API
+        async verifyLiveness() {
+            if (!this.selfieCapture) {
+                this.livenessError = 'Please capture a selfie first';
+                return;
+            }
+
+            this.verifyingLiveness = true;
+            this.livenessError = '';
+
+            try {
+                // Get NIN photo from NIN verification data if available
+                let ninPhoto = null;
+                const ninVerificationDataStr = document.querySelector('[name$="_verification_data"]')?.value;
+                if (ninVerificationDataStr) {
+                    try {
+                        const ninData = JSON.parse(ninVerificationDataStr);
+                        ninPhoto = ninData.photo || null;
+                    } catch (e) {
+                        console.log('No NIN data for face matching');
+                    }
+                }
+
+                const response = await fetch('{{ route('api.liveness.verify') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        selfie: this.selfieCapture,
+                        nin_photo: ninPhoto
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.verified) {
+                    // Liveness verified successfully
+                    this.livenessVerified = true;
+                    this.livenessError = '';
+                    this.faceMatchScore = result.data?.face_match_score || null;
+                    this.livenessVerificationData = JSON.stringify(result.data);
+
+                    console.log('Liveness verified successfully:', result.data);
+                } else {
+                    // Verification failed
+                    this.livenessVerified = false;
+                    this.livenessError = result.message || 'Liveness verification failed. Please try again.';
+                }
+            } catch (error) {
+                console.error('Liveness verification error:', error);
+                this.livenessVerified = false;
+                this.livenessError = 'Network error. Please check your connection and try again.';
+            } finally {
+                this.verifyingLiveness = false;
+            }
+        },
+
+        // NIN validation with auto-verify
+        validateNINAndAutoVerify() {
+            // Only allow digits
+            this.value = this.value.replace(/\D/g, '');
+
+            // Reset verification if NIN changes
+            if (this.value.length !== 11) {
+                this.ninVerified = false;
+                this.verificationError = '';
+            }
+
+            // Basic validation
+            if (this.value.length > 0 && this.value.length !== 11) {
+                this.hasError = true;
+                this.errorMessage = 'NIN must be exactly 11 digits';
+            } else {
+                this.hasError = false;
+                this.errorMessage = '';
+            }
+
+            // Auto-verify when 11 digits are entered
+            if (this.value.length === 11 && !this.ninVerified && !this.verifying) {
+                this.verifyNIN();
+            }
+        },
+
+        // NIN validation (legacy - kept for compatibility)
+        validateNIN() {
+            this.validateNINAndAutoVerify();
+        },
+
+        // Verify NIN with API
+        async verifyNIN() {
+            if (this.value.length !== 11) {
+                this.hasError = true;
+                this.errorMessage = 'Please enter a valid 11-digit NIN';
+                return;
+            }
+
+            this.verifying = true;
+            this.verificationError = '';
+            this.hasError = false;
+
+            try {
+                const response = await fetch('{{ route('api.nin.verify') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        nin: this.value
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.verified) {
+                    // NIN verified successfully
+                    this.ninVerified = true;
+                    this.verificationError = '';
+                    this.ninVerificationData = JSON.stringify(result.data);
+
+                    // Auto-populate form fields
+                    this.autoPopulateFields(result.data);
+
+                    // Show success message
+                    console.log('NIN verified successfully:', result.data);
+                } else {
+                    // Verification failed
+                    this.ninVerified = false;
+                    this.verificationError = result.message || 'NIN verification failed. Please try again.';
+                    this.hasError = true;
+                    this.errorMessage = result.message;
+                }
+            } catch (error) {
+                console.error('NIN verification error:', error);
+                this.ninVerified = false;
+                this.verificationError = 'Network error. Please check your connection and try again.';
+                this.hasError = true;
+                this.errorMessage = 'Failed to verify NIN. Please try again.';
+            } finally {
+                this.verifying = false;
+            }
+        },
+
+        // Auto-populate form fields with NIN data
+        autoPopulateFields(data) {
+            // Mapping of API response fields to form field names
+            const fieldMap = {
+                'first_name': data.first_name,
+                'last_name': data.last_name,
+                'middle_name': data.middle_name,
+                'date_of_birth': data.date_of_birth,
+                'dob': data.date_of_birth,
+                'phone_number': data.phone_number,
+                'phone': data.phone_number,
+                'email': data.email,
+                'gender': data.gender,
+                'address': data.address,
+                'state': data.state,
+                'lga': data.lga,
+            };
+
+            // Iterate through all form fields and populate if data exists
+            Object.keys(fieldMap).forEach(fieldName => {
+                const fieldValue = fieldMap[fieldName];
+                if (fieldValue) {
+                    const inputElement = document.querySelector(`[name="${fieldName}"]`);
+                    if (inputElement) {
+                        // Trigger Alpine.js update
+                        inputElement.value = fieldValue;
+                        inputElement.dispatchEvent(new Event('input'));
+
+                        // Add visual indication that field was auto-filled
+                        inputElement.classList.add('bg-blue-50', 'border-blue-300');
+
+                        // Make auto-filled fields readonly (optional)
+                        // inputElement.setAttribute('readonly', 'readonly');
+                    }
+                }
+            });
         },
 
         // Email validation

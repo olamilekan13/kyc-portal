@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Events\SubmissionDeclined;
+use App\Mail\KycDeclineMail;
 use App\Models\KycNotification;
 use App\Models\KycSubmission;
 use App\Models\User;
@@ -256,11 +257,18 @@ MESSAGE;
     protected function sendNotificationEmail(KycSubmission $submission, KycNotification $notification): void
     {
         try {
-            // Send email using Laravel Mail facade
-            Mail::raw($notification->message, function ($message) use ($notification) {
-                $message->to($notification->recipient)
-                    ->subject($notification->subject);
-            });
+            // Get reviewer name
+            $reviewer = $submission->reviewer;
+            $reviewerName = $reviewer?->name ?? 'KYC Review Team';
+
+            // Send email using the KycDeclineMail Mailable
+            Mail::to($notification->recipient)
+                ->send(new KycDeclineMail(
+                    $submission,
+                    $notification->recipient,
+                    $submission->decline_reason ?? 'No reason provided',
+                    $reviewerName
+                ));
 
             // Mark notification as sent
             $notification->markAsSent();

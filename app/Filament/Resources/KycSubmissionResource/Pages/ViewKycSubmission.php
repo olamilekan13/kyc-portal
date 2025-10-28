@@ -31,29 +31,23 @@ class ViewKycSubmission extends ViewRecord
                 ->modalDescription('This will send the submission data to YouVerify for identity verification.')
                 ->modalIcon('heroicon-o-shield-check')
                 ->action(function (KycSubmission $record) {
-                    // TODO: Implement YouVerify API integration via YouVerifyService
-                    // Example:
-                    // $youVerifyService = app(YouVerifyService::class);
-                    // $response = $youVerifyService->verifyIdentity($record);
+                    // Use the VerifyKycSubmissionAction to integrate with YouVerify
+                    $verifyAction = app(\App\Actions\VerifyKycSubmissionAction::class);
+                    $result = $verifyAction->execute($record);
 
-                    $record->update([
-                        'verification_status' => KycSubmission::VERIFICATION_VERIFIED,
-                        'status' => KycSubmission::STATUS_UNDER_REVIEW,
-                    ]);
-
-                    // Create verification log
-                    $record->verificationLogs()->create([
-                        'verification_provider' => 'YouVerify',
-                        'request_payload' => $record->submission_data,
-                        'response_payload' => ['status' => 'success', 'message' => 'Verification completed'],
-                        'status' => 'success',
-                    ]);
-
-                    Notification::make()
-                        ->title('Verification initiated successfully')
-                        ->body('The submission has been sent to YouVerify for verification.')
-                        ->success()
-                        ->send();
+                    if ($result['success'] && $result['verified']) {
+                        Notification::make()
+                            ->title('Verification completed successfully')
+                            ->body($result['message'])
+                            ->success()
+                            ->send();
+                    } else {
+                        Notification::make()
+                            ->title('Verification failed')
+                            ->body($result['message'] ?? 'An error occurred during verification.')
+                            ->danger()
+                            ->send();
+                    }
                 }),
 
             Actions\Action::make('approve')
