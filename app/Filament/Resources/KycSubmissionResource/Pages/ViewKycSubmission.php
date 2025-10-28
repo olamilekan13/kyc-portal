@@ -6,70 +6,69 @@ use App\Filament\Resources\KycSubmissionResource;
 use App\Models\KycSubmission;
 use Filament\Actions;
 use Filament\Forms;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Text;
-use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class ViewKycSubmission extends ViewRecord
 {
     protected static string $resource = KycSubmissionResource::class;
 
-    public function infolist(Schema $schema): Schema
+    public function infolist(Infolist $infolist): Infolist
     {
-        return $schema
+        return $infolist
             ->schema([
                 // Section 1: Submission Information
                 Section::make('Submission Information')
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Text::make('id')
+                                TextEntry::make('id')
                                     ->label('Reference Number')
                                     ->formatStateUsing(fn ($record): string => "#{$record->id}")
                                     ->weight('bold')
-                                    ->size('lg'),
+                                    ->size(TextEntry\TextEntrySize::Large),
 
-                                Text::make('form')
+                                TextEntry::make('form.name')
                                     ->label('Form Type')
-                                    ->formatStateUsing(fn ($record): string => $record->form->name ?? 'N/A')
                                     ->badge()
                                     ->color('info'),
 
-                                Text::make('created_at')
+                                TextEntry::make('created_at')
                                     ->label('Submitted At')
-                                    ->formatStateUsing(fn ($record): string => $record->created_at->format('M d, Y H:i A'))
+                                    ->dateTime('M d, Y H:i A')
                                     ->icon('heroicon-o-calendar'),
 
-                                Text::make('status')
+                                TextEntry::make('status')
                                     ->label('Current Status')
                                     ->badge()
-                                    ->formatStateUsing(fn ($record): string => ucwords(str_replace('_', ' ', $record->status)))
-                                    ->color(fn ($record): string => match ($record->status) {
-                                        KycSubmission::STATUS_PENDING => 'gray',
-                                        KycSubmission::STATUS_UNDER_REVIEW => 'info',
-                                        KycSubmission::STATUS_VERIFIED => 'warning',
-                                        KycSubmission::STATUS_APPROVED => 'success',
-                                        KycSubmission::STATUS_DECLINED => 'danger',
+                                    ->formatStateUsing(fn ($state): string => ucwords(str_replace('_', ' ', $state)))
+                                    ->color(fn ($state): string => match ($state) {
+                                        'pending' => 'gray',
+                                        'under_review' => 'info',
+                                        'verified' => 'warning',
+                                        'approved' => 'success',
+                                        'declined' => 'danger',
                                         default => 'gray',
                                     }),
 
-                                Text::make('verification_status')
+                                TextEntry::make('verification_status')
                                     ->label('Verification Status')
                                     ->badge()
-                                    ->formatStateUsing(fn ($record): string => ucwords(str_replace('_', ' ', $record->verification_status)))
-                                    ->color(fn ($record): string => match ($record->verification_status) {
-                                        KycSubmission::VERIFICATION_NOT_VERIFIED => 'gray',
-                                        KycSubmission::VERIFICATION_VERIFIED => 'success',
-                                        KycSubmission::VERIFICATION_FAILED => 'danger',
+                                    ->formatStateUsing(fn ($state): string => ucwords(str_replace('_', ' ', $state)))
+                                    ->color(fn ($state): string => match ($state) {
+                                        'not_verified' => 'gray',
+                                        'verified' => 'success',
+                                        'failed' => 'danger',
                                         default => 'gray',
                                     })
-                                    ->icon(fn ($record): string => match ($record->verification_status) {
-                                        KycSubmission::VERIFICATION_VERIFIED => 'heroicon-o-check-circle',
-                                        KycSubmission::VERIFICATION_FAILED => 'heroicon-o-x-circle',
+                                    ->icon(fn ($state): string => match ($state) {
+                                        'verified' => 'heroicon-o-check-circle',
+                                        'failed' => 'heroicon-o-x-circle',
                                         default => 'heroicon-o-clock',
                                     }),
                             ]),
@@ -100,9 +99,9 @@ class ViewKycSubmission extends ViewRecord
                                     $url = Storage::url($path);
                                     $filename = basename($path);
 
-                                    $gridItems[] = Text::make($key)
+                                    $gridItems[] = TextEntry::make($key)
                                         ->label($label)
-                                        ->content("<a href='{$url}' target='_blank' class='text-primary-600 hover:underline flex items-center gap-1'>
+                                        ->formatStateUsing(fn () => "<a href='{$url}' target='_blank' class='text-primary-600 hover:underline flex items-center gap-1'>
                                             <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
                                                 <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'></path>
                                             </svg>
@@ -111,9 +110,9 @@ class ViewKycSubmission extends ViewRecord
                                         ->html();
                                 } else {
                                     // Handle other arrays as JSON
-                                    $gridItems[] = Text::make($key)
+                                    $gridItems[] = TextEntry::make($key)
                                         ->label($label)
-                                        ->content(json_encode($value, JSON_PRETTY_PRINT));
+                                        ->formatStateUsing(fn () => json_encode($value, JSON_PRETTY_PRINT));
                                 }
                             } elseif ($this->isDate($key, $value)) {
                                 // Handle dates
@@ -122,30 +121,30 @@ class ViewKycSubmission extends ViewRecord
                                 } catch (\Exception $e) {
                                     $formatted = $value;
                                 }
-                                $gridItems[] = Text::make($key)
+                                $gridItems[] = TextEntry::make($key)
                                     ->label($label)
-                                    ->content($formatted)
+                                    ->formatStateUsing(fn () => $formatted)
                                     ->icon('heroicon-o-calendar');
                             } elseif ($this->isPhone($key)) {
                                 // Handle phone numbers
-                                $gridItems[] = Text::make($key)
+                                $gridItems[] = TextEntry::make($key)
                                     ->label($label)
-                                    ->content($this->formatPhone($value))
+                                    ->formatStateUsing(fn () => $this->formatPhone($value))
                                     ->icon('heroicon-o-phone')
                                     ->copyable();
                             } elseif ($this->isEmail($key, $value)) {
                                 // Handle emails
-                                $gridItems[] = Text::make($key)
+                                $gridItems[] = TextEntry::make($key)
                                     ->label($label)
-                                    ->content("<a href='mailto:{$value}' class='text-primary-600 hover:underline'>{$value}</a>")
+                                    ->formatStateUsing(fn () => "<a href='mailto:{$value}' class='text-primary-600 hover:underline'>{$value}</a>")
                                     ->icon('heroicon-o-envelope')
                                     ->copyable()
                                     ->html();
                             } else {
                                 // Handle regular text
-                                $gridItems[] = Text::make($key)
+                                $gridItems[] = TextEntry::make($key)
                                     ->label($label)
-                                    ->content((string) $value)
+                                    ->formatStateUsing(fn () => (string) $value)
                                     ->copyable();
                             }
                         }
@@ -164,55 +163,36 @@ class ViewKycSubmission extends ViewRecord
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Text::make('verification_provider')
+                                TextEntry::make('verificationLogs.verification_provider')
                                     ->label('Verification Provider')
-                                    ->content(fn ($record): string => $record->verificationLogs->first()?->verification_provider ?? 'YouVerify')
+                                    ->default('YouVerify')
                                     ->badge()
                                     ->color('info'),
 
-                                Text::make('verification_date')
+                                TextEntry::make('verificationLogs.created_at')
                                     ->label('Verification Date')
-                                    ->content(fn ($record): string =>
-                                        $record->verificationLogs->first()?->created_at?->format('M d, Y H:i A') ?? 'N/A'
-                                    )
+                                    ->dateTime('M d, Y H:i A')
+                                    ->default('N/A')
                                     ->icon('heroicon-o-clock'),
 
-                                Text::make('verification_log_status')
+                                TextEntry::make('verificationLogs.status')
                                     ->label('Verification Status')
                                     ->badge()
-                                    ->content(fn ($record): string =>
-                                        $record->verificationLogs->first()?->status
-                                            ? ucwords($record->verificationLogs->first()->status)
-                                            : 'N/A'
-                                    )
-                                    ->color(fn ($record): string => match ($record->verificationLogs->first()?->status) {
+                                    ->formatStateUsing(fn ($state): string => $state ? ucwords($state) : 'N/A')
+                                    ->color(fn ($state): string => match ($state) {
                                         'success' => 'success',
                                         'failed' => 'danger',
                                         default => 'gray',
                                     }),
                             ]),
 
-                        Text::make('verification_response_data')
+                        TextEntry::make('verification_response')
                             ->label('Verification Response')
-                            ->content(fn ($record): string =>
-                                !empty($record->verification_response)
-                                    ? json_encode($record->verification_response, JSON_PRETTY_PRINT)
-                                    : 'No data'
+                            ->formatStateUsing(fn ($state): string =>
+                                !empty($state) ? json_encode($state, JSON_PRETTY_PRINT) : 'No data'
                             )
                             ->columnSpanFull()
                             ->visible(fn ($record): bool => !empty($record->verification_response)),
-
-                        Text::make('verification_log_response')
-                            ->label('Detailed Verification Data')
-                            ->content(fn ($record): string =>
-                                !empty($record->verificationLogs->first()?->response_payload)
-                                    ? json_encode($record->verificationLogs->first()->response_payload, JSON_PRETTY_PRINT)
-                                    : 'No data'
-                            )
-                            ->columnSpanFull()
-                            ->visible(fn ($record): bool =>
-                                !empty($record->verificationLogs->first()?->response_payload)
-                            ),
                     ])
                     ->visible(fn ($record): bool =>
                         $record->verification_status !== KycSubmission::VERIFICATION_NOT_VERIFIED ||
@@ -226,22 +206,20 @@ class ViewKycSubmission extends ViewRecord
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                Text::make('reviewer_name')
+                                TextEntry::make('reviewer.name')
                                     ->label('Reviewed By')
-                                    ->content(fn ($record): string => $record->reviewer?->name ?? 'Not reviewed yet')
+                                    ->default('Not reviewed yet')
                                     ->icon('heroicon-o-user'),
 
-                                Text::make('reviewed_at')
+                                TextEntry::make('reviewed_at')
                                     ->label('Reviewed At')
-                                    ->content(fn ($record): string =>
-                                        $record->reviewed_at?->format('M d, Y H:i A') ?? 'N/A'
-                                    )
+                                    ->dateTime('M d, Y H:i A')
+                                    ->default('N/A')
                                     ->icon('heroicon-o-clock'),
                             ]),
 
-                        Text::make('decline_reason')
+                        TextEntry::make('decline_reason')
                             ->label('Decline Reason')
-                            ->content(fn ($record): string => $record->decline_reason ?? '')
                             ->columnSpanFull()
                             ->badge()
                             ->color('danger')
