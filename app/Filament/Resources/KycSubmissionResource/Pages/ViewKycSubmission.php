@@ -120,13 +120,6 @@ class ViewKycSubmission extends ViewRecord
                     return redirect()->route('filament.exit.resources.kyc-submissions.index');
                 }),
 
-            Actions\Action::make('download_pdf')
-                ->label('Download PDF')
-                ->icon('heroicon-o-arrow-down-tray')
-                ->color('gray')
-                ->url(fn (KycSubmission $record): string => route('kyc.submission.pdf', $record))
-                ->openUrlInNewTab(),
-
             Actions\DeleteAction::make()
                 ->visible(fn (KycSubmission $record): bool =>
                     $record->status === KycSubmission::STATUS_DECLINED
