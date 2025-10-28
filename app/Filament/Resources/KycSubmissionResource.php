@@ -7,9 +7,7 @@ use App\Models\KycForm;
 use App\Models\KycSubmission;
 use BackedEnum;
 use Filament\Forms\Components as FormFields;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
-use Filament\Schemas\Components;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -30,62 +28,8 @@ class KycSubmissionResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema
-            ->schema([
-                Components\Section::make('Submission Details')
-                    ->schema([
-                        Components\Placeholder::make('id')
-                            ->label('Reference Number')
-                            ->content(fn (KycSubmission $record): string => "#{$record->id}"),
-
-                        Components\Placeholder::make('form.name')
-                            ->label('Form Type')
-                            ->content(fn (KycSubmission $record): string => $record->form->name ?? 'N/A'),
-
-                        Components\Placeholder::make('status')
-                            ->label('Status')
-                            ->content(fn (KycSubmission $record): string => ucwords(str_replace('_', ' ', $record->status))),
-
-                        Components\Placeholder::make('verification_status')
-                            ->label('Verification Status')
-                            ->content(fn (KycSubmission $record): string => ucwords(str_replace('_', ' ', $record->verification_status))),
-
-                        Components\Placeholder::make('created_at')
-                            ->label('Submitted At')
-                            ->content(fn (KycSubmission $record): string => $record->created_at->format('M d, Y H:i')),
-
-                        Components\KeyValue::make('submission_data')
-                            ->label('Submitted Data')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-
-                Components\Section::make('Review Information')
-                    ->schema([
-                        Components\Placeholder::make('reviewer.name')
-                            ->label('Reviewed By')
-                            ->content(fn (KycSubmission $record): string => $record->reviewer->name ?? 'Not reviewed yet'),
-
-                        Components\Placeholder::make('reviewed_at')
-                            ->label('Reviewed At')
-                            ->content(fn (KycSubmission $record): string => $record->reviewed_at?->format('M d, Y H:i') ?? 'N/A'),
-
-                        Components\Placeholder::make('decline_reason')
-                            ->label('Decline Reason')
-                            ->content(fn (KycSubmission $record): string => $record->decline_reason ?? 'N/A')
-                            ->columnSpanFull(),
-                    ])
-                    ->columns(2)
-                    ->visible(fn (KycSubmission $record): bool => $record->reviewed_by !== null || $record->decline_reason !== null),
-
-                Components\Section::make('Verification Response')
-                    ->schema([
-                        Components\KeyValue::make('verification_response')
-                            ->label('Verification Data')
-                            ->columnSpanFull(),
-                    ])
-                    ->visible(fn (KycSubmission $record): bool => !empty($record->verification_response)),
-            ]);
+        // No form needed - using custom view page
+        return $schema->schema([]);
     }
 
     public static function table(Table $table): Table
