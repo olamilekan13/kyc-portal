@@ -5,14 +5,14 @@ namespace App\Filament\Resources\KycSubmissionResource\Pages;
 use App\Filament\Resources\KycSubmissionResource;
 use App\Models\KycSubmission;
 use Filament\Actions;
-use Filament\Infolists;
+use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Schemas\Components;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Text;
 use Filament\Schemas\Schema;
-use Filament\Support\Colors\Color;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class ViewKycSubmission extends ViewRecord
 {
@@ -23,31 +23,32 @@ class ViewKycSubmission extends ViewRecord
         return $schema
             ->schema([
                 // Section 1: Submission Information
-                Infolists\Components\Section::make('Submission Information')
+                Section::make('Submission Information')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('id')
+                                Text::make('id')
                                     ->label('Reference Number')
-                                    ->formatStateUsing(fn (string $state): string => "#{$state}")
+                                    ->formatStateUsing(fn ($record): string => "#{$record->id}")
                                     ->weight('bold')
                                     ->size('lg'),
 
-                                Infolists\Components\TextEntry::make('form.name')
+                                Text::make('form')
                                     ->label('Form Type')
+                                    ->formatStateUsing(fn ($record): string => $record->form->name ?? 'N/A')
                                     ->badge()
                                     ->color('info'),
 
-                                Infolists\Components\TextEntry::make('created_at')
+                                Text::make('created_at')
                                     ->label('Submitted At')
-                                    ->dateTime('M d, Y H:i A')
+                                    ->formatStateUsing(fn ($record): string => $record->created_at->format('M d, Y H:i A'))
                                     ->icon('heroicon-o-calendar'),
 
-                                Infolists\Components\TextEntry::make('status')
+                                Text::make('status')
                                     ->label('Current Status')
                                     ->badge()
-                                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
-                                    ->color(fn (string $state): string => match ($state) {
+                                    ->formatStateUsing(fn ($record): string => ucwords(str_replace('_', ' ', $record->status)))
+                                    ->color(fn ($record): string => match ($record->status) {
                                         KycSubmission::STATUS_PENDING => 'gray',
                                         KycSubmission::STATUS_UNDER_REVIEW => 'info',
                                         KycSubmission::STATUS_VERIFIED => 'warning',
@@ -56,17 +57,17 @@ class ViewKycSubmission extends ViewRecord
                                         default => 'gray',
                                     }),
 
-                                Infolists\Components\TextEntry::make('verification_status')
+                                Text::make('verification_status')
                                     ->label('Verification Status')
                                     ->badge()
-                                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
-                                    ->color(fn (string $state): string => match ($state) {
+                                    ->formatStateUsing(fn ($record): string => ucwords(str_replace('_', ' ', $record->verification_status)))
+                                    ->color(fn ($record): string => match ($record->verification_status) {
                                         KycSubmission::VERIFICATION_NOT_VERIFIED => 'gray',
                                         KycSubmission::VERIFICATION_VERIFIED => 'success',
                                         KycSubmission::VERIFICATION_FAILED => 'danger',
                                         default => 'gray',
                                     })
-                                    ->icon(fn (string $state): string => match ($state) {
+                                    ->icon(fn ($record): string => match ($record->verification_status) {
                                         KycSubmission::VERIFICATION_VERIFIED => 'heroicon-o-check-circle',
                                         KycSubmission::VERIFICATION_FAILED => 'heroicon-o-x-circle',
                                         default => 'heroicon-o-clock',
@@ -76,128 +77,144 @@ class ViewKycSubmission extends ViewRecord
                     ->columns(1),
 
                 // Section 2: Applicant Details
-                Infolists\Components\Section::make('Applicant Details')
-                    ->schema([
-                        Infolists\Components\Grid::make(2)
-                            ->schema(function (KycSubmission $record): array {
-                                $entries = [];
-                                $submissionData = $record->submission_data ?? [];
+                Section::make('Applicant Details')
+                    ->schema(function ($record): array {
+                        $components = [];
+                        $submissionData = $record->submission_data ?? [];
 
-                                foreach ($submissionData as $key => $value) {
-                                    // Skip empty values
-                                    if (empty($value)) {
-                                        continue;
-                                    }
+                        $gridItems = [];
+                        foreach ($submissionData as $key => $value) {
+                            // Skip empty values
+                            if (empty($value)) {
+                                continue;
+                            }
 
-                                    // Format the label
-                                    $label = ucwords(str_replace('_', ' ', $key));
+                            // Format the label
+                            $label = ucwords(str_replace('_', ' ', $key));
 
-                                    // Handle different data types
-                                    if (is_array($value)) {
-                                        // Handle file uploads
-                                        if (isset($value['path']) || isset($value['url'])) {
-                                            $entries[] = Infolists\Components\TextEntry::make("submission_data.{$key}")
-                                                ->label($label)
-                                                ->formatStateUsing(function ($state) {
-                                                    if (isset($state['path'])) {
-                                                        $url = Storage::url($state['path']);
-                                                        $filename = basename($state['path']);
-                                                        return "<a href='{$url}' target='_blank' class='text-primary-600 hover:underline flex items-center gap-1'>
-                                                            <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'></path>
-                                                            </svg>
-                                                            {$filename}
-                                                        </a>";
-                                                    }
-                                                    return 'N/A';
-                                                })
-                                                ->html();
-                                        } else {
-                                            // Handle other arrays as JSON
-                                            $entries[] = Infolists\Components\TextEntry::make("submission_data.{$key}")
-                                                ->label($label)
-                                                ->formatStateUsing(fn ($state): string => json_encode($state, JSON_PRETTY_PRINT));
-                                        }
-                                    } elseif ($this->isDate($key, $value)) {
-                                        // Handle dates
-                                        $entries[] = Infolists\Components\TextEntry::make("submission_data.{$key}")
-                                            ->label($label)
-                                            ->formatStateUsing(function ($state) {
-                                                try {
-                                                    return \Carbon\Carbon::parse($state)->format('M d, Y');
-                                                } catch (\Exception $e) {
-                                                    return $state;
-                                                }
-                                            })
-                                            ->icon('heroicon-o-calendar');
-                                    } elseif ($this->isPhone($key)) {
-                                        // Handle phone numbers
-                                        $entries[] = Infolists\Components\TextEntry::make("submission_data.{$key}")
-                                            ->label($label)
-                                            ->formatStateUsing(fn ($state): string => $this->formatPhone($state))
-                                            ->icon('heroicon-o-phone')
-                                            ->copyable();
-                                    } elseif ($this->isEmail($key, $value)) {
-                                        // Handle emails
-                                        $entries[] = Infolists\Components\TextEntry::make("submission_data.{$key}")
-                                            ->label($label)
-                                            ->icon('heroicon-o-envelope')
-                                            ->copyable()
-                                            ->url(fn ($state): string => "mailto:{$state}");
-                                    } else {
-                                        // Handle regular text
-                                        $entries[] = Infolists\Components\TextEntry::make("submission_data.{$key}")
-                                            ->label($label)
-                                            ->copyable();
-                                    }
+                            // Handle different data types
+                            if (is_array($value)) {
+                                // Handle file uploads
+                                if (isset($value['path']) || isset($value['url'])) {
+                                    $path = $value['path'] ?? '';
+                                    $url = Storage::url($path);
+                                    $filename = basename($path);
+
+                                    $gridItems[] = Text::make($key)
+                                        ->label($label)
+                                        ->content("<a href='{$url}' target='_blank' class='text-primary-600 hover:underline flex items-center gap-1'>
+                                            <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                                                <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'></path>
+                                            </svg>
+                                            {$filename}
+                                        </a>")
+                                        ->html();
+                                } else {
+                                    // Handle other arrays as JSON
+                                    $gridItems[] = Text::make($key)
+                                        ->label($label)
+                                        ->content(json_encode($value, JSON_PRETTY_PRINT));
                                 }
+                            } elseif ($this->isDate($key, $value)) {
+                                // Handle dates
+                                try {
+                                    $formatted = \Carbon\Carbon::parse($value)->format('M d, Y');
+                                } catch (\Exception $e) {
+                                    $formatted = $value;
+                                }
+                                $gridItems[] = Text::make($key)
+                                    ->label($label)
+                                    ->content($formatted)
+                                    ->icon('heroicon-o-calendar');
+                            } elseif ($this->isPhone($key)) {
+                                // Handle phone numbers
+                                $gridItems[] = Text::make($key)
+                                    ->label($label)
+                                    ->content($this->formatPhone($value))
+                                    ->icon('heroicon-o-phone')
+                                    ->copyable();
+                            } elseif ($this->isEmail($key, $value)) {
+                                // Handle emails
+                                $gridItems[] = Text::make($key)
+                                    ->label($label)
+                                    ->content("<a href='mailto:{$value}' class='text-primary-600 hover:underline'>{$value}</a>")
+                                    ->icon('heroicon-o-envelope')
+                                    ->copyable()
+                                    ->html();
+                            } else {
+                                // Handle regular text
+                                $gridItems[] = Text::make($key)
+                                    ->label($label)
+                                    ->content((string) $value)
+                                    ->copyable();
+                            }
+                        }
 
-                                return $entries;
-                            }),
-                    ])
+                        if (!empty($gridItems)) {
+                            $components[] = Grid::make(2)->schema($gridItems);
+                        }
+
+                        return $components;
+                    })
                     ->collapsible()
                     ->persistCollapsed(),
 
                 // Section 3: Verification Details
-                Infolists\Components\Section::make('Verification Details')
+                Section::make('Verification Details')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('verificationLogs.0.verification_provider')
+                                Text::make('verification_provider')
                                     ->label('Verification Provider')
-                                    ->default('YouVerify')
+                                    ->content(fn ($record): string => $record->verificationLogs->first()?->verification_provider ?? 'YouVerify')
                                     ->badge()
                                     ->color('info'),
 
-                                Infolists\Components\TextEntry::make('verificationLogs.0.created_at')
+                                Text::make('verification_date')
                                     ->label('Verification Date')
-                                    ->dateTime('M d, Y H:i A')
+                                    ->content(fn ($record): string =>
+                                        $record->verificationLogs->first()?->created_at?->format('M d, Y H:i A') ?? 'N/A'
+                                    )
                                     ->icon('heroicon-o-clock'),
 
-                                Infolists\Components\TextEntry::make('verificationLogs.0.status')
+                                Text::make('verification_log_status')
                                     ->label('Verification Status')
                                     ->badge()
-                                    ->formatStateUsing(fn (?string $state): string => $state ? ucwords($state) : 'N/A')
-                                    ->color(fn (?string $state): string => match ($state) {
+                                    ->content(fn ($record): string =>
+                                        $record->verificationLogs->first()?->status
+                                            ? ucwords($record->verificationLogs->first()->status)
+                                            : 'N/A'
+                                    )
+                                    ->color(fn ($record): string => match ($record->verificationLogs->first()?->status) {
                                         'success' => 'success',
                                         'failed' => 'danger',
                                         default => 'gray',
                                     }),
                             ]),
 
-                        Infolists\Components\KeyValueEntry::make('verification_response')
+                        Text::make('verification_response_data')
                             ->label('Verification Response')
+                            ->content(fn ($record): string =>
+                                !empty($record->verification_response)
+                                    ? json_encode($record->verification_response, JSON_PRETTY_PRINT)
+                                    : 'No data'
+                            )
                             ->columnSpanFull()
-                            ->hidden(fn (KycSubmission $record): bool => empty($record->verification_response)),
+                            ->visible(fn ($record): bool => !empty($record->verification_response)),
 
-                        Infolists\Components\KeyValueEntry::make('verificationLogs.0.response_payload')
+                        Text::make('verification_log_response')
                             ->label('Detailed Verification Data')
+                            ->content(fn ($record): string =>
+                                !empty($record->verificationLogs->first()?->response_payload)
+                                    ? json_encode($record->verificationLogs->first()->response_payload, JSON_PRETTY_PRINT)
+                                    : 'No data'
+                            )
                             ->columnSpanFull()
-                            ->hidden(fn (KycSubmission $record): bool =>
-                                empty($record->verificationLogs->first()?->response_payload)
+                            ->visible(fn ($record): bool =>
+                                !empty($record->verificationLogs->first()?->response_payload)
                             ),
                     ])
-                    ->visible(fn (KycSubmission $record): bool =>
+                    ->visible(fn ($record): bool =>
                         $record->verification_status !== KycSubmission::VERIFICATION_NOT_VERIFIED ||
                         $record->verificationLogs->isNotEmpty()
                     )
@@ -205,30 +222,32 @@ class ViewKycSubmission extends ViewRecord
                     ->persistCollapsed(),
 
                 // Section 4: Review Information
-                Infolists\Components\Section::make('Review Information')
+                Section::make('Review Information')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Grid::make(2)
                             ->schema([
-                                Infolists\Components\TextEntry::make('reviewer.name')
+                                Text::make('reviewer_name')
                                     ->label('Reviewed By')
-                                    ->icon('heroicon-o-user')
-                                    ->default('Not reviewed yet'),
+                                    ->content(fn ($record): string => $record->reviewer?->name ?? 'Not reviewed yet')
+                                    ->icon('heroicon-o-user'),
 
-                                Infolists\Components\TextEntry::make('reviewed_at')
+                                Text::make('reviewed_at')
                                     ->label('Reviewed At')
-                                    ->dateTime('M d, Y H:i A')
-                                    ->icon('heroicon-o-clock')
-                                    ->default('N/A'),
+                                    ->content(fn ($record): string =>
+                                        $record->reviewed_at?->format('M d, Y H:i A') ?? 'N/A'
+                                    )
+                                    ->icon('heroicon-o-clock'),
                             ]),
 
-                        Infolists\Components\TextEntry::make('decline_reason')
+                        Text::make('decline_reason')
                             ->label('Decline Reason')
+                            ->content(fn ($record): string => $record->decline_reason ?? '')
                             ->columnSpanFull()
                             ->badge()
                             ->color('danger')
-                            ->visible(fn (KycSubmission $record): bool => !empty($record->decline_reason)),
+                            ->visible(fn ($record): bool => !empty($record->decline_reason)),
                     ])
-                    ->visible(fn (KycSubmission $record): bool =>
+                    ->visible(fn ($record): bool =>
                         $record->reviewed_by !== null ||
                         $record->decline_reason !== null
                     )
