@@ -14,7 +14,7 @@ class ViewKycSubmission extends ViewRecord
 {
     protected static string $resource = KycSubmissionResource::class;
 
-    protected static string $view = 'filament.resources.kyc-submission.pages.view-kyc-submission';
+    protected string $view = 'filament.resources.kyc-submission.pages.view-kyc-submission';
 
     protected function getHeaderActions(): array
     {
