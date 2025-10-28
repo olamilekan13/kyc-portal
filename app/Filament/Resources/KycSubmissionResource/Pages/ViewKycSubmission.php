@@ -8,200 +8,13 @@ use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
-use Filament\Schemas\Components\Grid;
-use Filament\Schemas\Components\Placeholder;
-use Filament\Schemas\Components\Section;
-use Filament\Schemas\Schema;
 use Illuminate\Support\Facades\Storage;
 
 class ViewKycSubmission extends ViewRecord
 {
     protected static string $resource = KycSubmissionResource::class;
 
-    public function infolist(Schema $schema): Schema
-    {
-        return $schema
-            ->schema([
-                // Section 1: Submission Information
-                Section::make('Submission Information')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Placeholder::make('id')
-                                    ->label('Reference Number')
-                                    ->content(fn ($record): string => "#{$record->id}"),
-
-                                Placeholder::make('form.name')
-                                    ->label('Form Type')
-                                    ->content(fn ($record): string => $record->form?->name ?? 'N/A'),
-
-                                Placeholder::make('created_at')
-                                    ->label('Submitted At')
-                                    ->content(fn ($record): string => $record->created_at->format('M d, Y H:i A')),
-
-                                Placeholder::make('status')
-                                    ->label('Current Status')
-                                    ->content(fn ($record): string => ucwords(str_replace('_', ' ', $record->status))),
-
-                                Placeholder::make('verification_status')
-                                    ->label('Verification Status')
-                                    ->content(fn ($record): string => ucwords(str_replace('_', ' ', $record->verification_status))),
-                            ]),
-                    ])
-                    ->columns(1),
-
-                // Section 2: Applicant Details
-                Section::make('Applicant Details')
-                    ->schema(function ($record): array {
-                        $components = [];
-                        $submissionData = $record->submission_data ?? [];
-
-                        $gridItems = [];
-                        foreach ($submissionData as $key => $value) {
-                            // Skip empty values
-                            if (empty($value)) {
-                                continue;
-                            }
-
-                            // Format the label
-                            $label = ucwords(str_replace('_', ' ', $key));
-
-                            // Handle different data types
-                            if (is_array($value)) {
-                                // Handle file uploads
-                                if (isset($value['path']) || isset($value['url'])) {
-                                    $path = $value['path'] ?? '';
-                                    $url = Storage::url($path);
-                                    $filename = basename($path);
-
-                                    $gridItems[] = Placeholder::make($key)
-                                        ->label($label)
-                                        ->content(new \Illuminate\Support\HtmlString(
-                                            "<a href='{$url}' target='_blank' class='text-primary-600 hover:underline flex items-center gap-1'>
-                                                <svg class='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                                                    <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'></path>
-                                                </svg>
-                                                {$filename}
-                                            </a>"
-                                        ));
-                                } else {
-                                    // Handle other arrays as JSON
-                                    $gridItems[] = Placeholder::make($key)
-                                        ->label($label)
-                                        ->content(json_encode($value, JSON_PRETTY_PRINT));
-                                }
-                            } elseif ($this->isDate($key, $value)) {
-                                // Handle dates
-                                try {
-                                    $formatted = \Carbon\Carbon::parse($value)->format('M d, Y');
-                                } catch (\Exception $e) {
-                                    $formatted = $value;
-                                }
-                                $gridItems[] = Placeholder::make($key)
-                                    ->label($label)
-                                    ->content($formatted);
-                            } elseif ($this->isPhone($key)) {
-                                // Handle phone numbers
-                                $gridItems[] = Placeholder::make($key)
-                                    ->label($label)
-                                    ->content($this->formatPhone($value));
-                            } elseif ($this->isEmail($key, $value)) {
-                                // Handle emails
-                                $gridItems[] = Placeholder::make($key)
-                                    ->label($label)
-                                    ->content(new \Illuminate\Support\HtmlString(
-                                        "<a href='mailto:{$value}' class='text-primary-600 hover:underline'>{$value}</a>"
-                                    ));
-                            } else {
-                                // Handle regular text
-                                $gridItems[] = Placeholder::make($key)
-                                    ->label($label)
-                                    ->content((string) $value);
-                            }
-                        }
-
-                        if (!empty($gridItems)) {
-                            $components[] = Grid::make(2)->schema($gridItems);
-                        }
-
-                        return $components;
-                    })
-                    ->collapsible()
-                    ->persistCollapsed(),
-
-                // Section 3: Verification Details
-                Section::make('Verification Details')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Placeholder::make('verificationLogs.verification_provider')
-                                    ->label('Verification Provider')
-                                    ->content(fn ($record): string =>
-                                        $record->verificationLogs->first()?->verification_provider ?? 'YouVerify'
-                                    ),
-
-                                Placeholder::make('verificationLogs.created_at')
-                                    ->label('Verification Date')
-                                    ->content(fn ($record): string =>
-                                        $record->verificationLogs->first()?->created_at?->format('M d, Y H:i A') ?? 'N/A'
-                                    ),
-
-                                Placeholder::make('verificationLogs.status')
-                                    ->label('Verification Status')
-                                    ->content(fn ($record): string =>
-                                        $record->verificationLogs->first()?->status ?
-                                        ucwords($record->verificationLogs->first()->status) : 'N/A'
-                                    ),
-                            ]),
-
-                        Placeholder::make('verification_response')
-                            ->label('Verification Response')
-                            ->content(fn ($record): string =>
-                                !empty($record->verification_response) ?
-                                json_encode($record->verification_response, JSON_PRETTY_PRINT) : 'No data'
-                            )
-                            ->columnSpanFull()
-                            ->visible(fn ($record): bool => !empty($record->verification_response)),
-                    ])
-                    ->visible(fn ($record): bool =>
-                        $record->verification_status !== KycSubmission::VERIFICATION_NOT_VERIFIED ||
-                        $record->verificationLogs->isNotEmpty()
-                    )
-                    ->collapsible()
-                    ->persistCollapsed(),
-
-                // Section 4: Review Information
-                Section::make('Review Information')
-                    ->schema([
-                        Grid::make(2)
-                            ->schema([
-                                Placeholder::make('reviewer.name')
-                                    ->label('Reviewed By')
-                                    ->content(fn ($record): string =>
-                                        $record->reviewer?->name ?? 'Not reviewed yet'
-                                    ),
-
-                                Placeholder::make('reviewed_at')
-                                    ->label('Reviewed At')
-                                    ->content(fn ($record): string =>
-                                        $record->reviewed_at?->format('M d, Y H:i A') ?? 'N/A'
-                                    ),
-                            ]),
-
-                        Placeholder::make('decline_reason')
-                            ->label('Decline Reason')
-                            ->content(fn ($record): string => $record->decline_reason ?? '')
-                            ->columnSpanFull()
-                            ->visible(fn ($record): bool => !empty($record->decline_reason)),
-                    ])
-                    ->visible(fn ($record): bool =>
-                        $record->reviewed_by !== null ||
-                        $record->decline_reason !== null
-                    )
-                    ->collapsible()
-                    ->persistCollapsed(),
-            ]);
-    }
+    protected static string $view = 'filament.resources.kyc-submission.pages.view-kyc-submission';
 
     protected function getHeaderActions(): array
     {
@@ -327,7 +140,7 @@ class ViewKycSubmission extends ViewRecord
     /**
      * Helper method to check if a field is likely a date
      */
-    protected function isDate(string $key, mixed $value): bool
+    public function isDate(string $key, mixed $value): bool
     {
         $dateKeywords = ['date', 'birth', 'dob', 'issued', 'expiry', 'expires'];
 
@@ -353,7 +166,7 @@ class ViewKycSubmission extends ViewRecord
     /**
      * Helper method to check if a field is likely a phone number
      */
-    protected function isPhone(string $key): bool
+    public function isPhone(string $key): bool
     {
         $phoneKeywords = ['phone', 'mobile', 'telephone', 'cell', 'contact'];
 
@@ -369,7 +182,7 @@ class ViewKycSubmission extends ViewRecord
     /**
      * Helper method to check if a field is likely an email
      */
-    protected function isEmail(string $key, mixed $value): bool
+    public function isEmail(string $key, mixed $value): bool
     {
         if (str_contains(strtolower($key), 'email')) {
             return true;
@@ -385,7 +198,7 @@ class ViewKycSubmission extends ViewRecord
     /**
      * Helper method to format phone numbers
      */
-    protected function formatPhone(mixed $value): string
+    public function formatPhone(mixed $value): string
     {
         if (!is_string($value)) {
             return (string) $value;
