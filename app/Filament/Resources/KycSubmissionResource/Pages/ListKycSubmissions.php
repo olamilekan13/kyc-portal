@@ -4,7 +4,7 @@ namespace App\Filament\Resources\KycSubmissionResource\Pages;
 
 use App\Filament\Resources\KycSubmissionResource;
 use App\Models\KycSubmission;
-use Filament\Resources\Components\Tab;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 

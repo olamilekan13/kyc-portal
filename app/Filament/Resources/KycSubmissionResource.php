@@ -171,9 +171,9 @@ class KycSubmissionResource extends Resource
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        Components\DatePicker::make('created_from')
+                        FormFields\DatePicker::make('created_from')
                             ->label('Submitted From'),
-                        Components\DatePicker::make('created_until')
+                        FormFields\DatePicker::make('created_until')
                             ->label('Submitted Until'),
                     ])
                     ->query(function ($query, array $data) {
