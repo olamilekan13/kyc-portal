@@ -855,6 +855,11 @@ function fieldData{{ $index }}() {
                     this.verificationError = result.message || 'NIN verification failed. Please try again.';
                     this.hasError = true;
                     this.errorMessage = result.message;
+
+                    // Log debug information if available
+                    if (result.debug) {
+                        console.error('NIN Verification Debug Info:', result.debug);
+                    }
                 }
             } catch (error) {
                 console.error('NIN verification error:', error);

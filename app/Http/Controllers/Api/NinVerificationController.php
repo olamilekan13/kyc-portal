@@ -155,20 +155,25 @@ class NinVerificationController extends Controller
      */
     protected function extractAutoPopulateData(array $ninData): array
     {
-        // Common field mappings from YouVerify NIN response
-        // Adjust these based on actual API response structure
+        // Map YouVerify NIN response structure to form fields
+        // Based on YouVerify API docs: data contains firstName, lastName, middleName, dateOfBirth, mobile, address object, image, etc.
+
+        // Handle address object (contains town, lga, state, addressLine)
+        $address = $ninData['address'] ?? [];
+        $fullAddress = $address['addressLine'] ?? ($ninData['residentialAddress'] ?? null);
+
         return [
-            'first_name' => $ninData['firstName'] ?? $ninData['firstname'] ?? null,
-            'last_name' => $ninData['lastName'] ?? $ninData['lastname'] ?? $ninData['surname'] ?? null,
-            'middle_name' => $ninData['middleName'] ?? $ninData['middlename'] ?? null,
-            'date_of_birth' => $ninData['dateOfBirth'] ?? $ninData['birthdate'] ?? $ninData['dob'] ?? null,
-            'phone_number' => $ninData['phoneNumber'] ?? $ninData['telephoneNumber'] ?? $ninData['phone'] ?? null,
+            'first_name' => $ninData['firstName'] ?? null,
+            'last_name' => $ninData['lastName'] ?? null,
+            'middle_name' => $ninData['middleName'] ?? null,
+            'date_of_birth' => $ninData['dateOfBirth'] ?? null,
+            'phone_number' => $ninData['mobile'] ?? ($ninData['phoneNumber'] ?? null),
             'email' => $ninData['email'] ?? null,
             'gender' => $ninData['gender'] ?? null,
-            'address' => $ninData['address'] ?? $ninData['residentialAddress'] ?? null,
-            'state' => $ninData['state'] ?? $ninData['stateOfOrigin'] ?? null,
-            'lga' => $ninData['lga'] ?? $ninData['localGovernment'] ?? null,
-            'photo' => $ninData['photo'] ?? $ninData['photoUrl'] ?? null, // Base64 or URL
+            'address' => $fullAddress,
+            'state' => $address['state'] ?? ($ninData['state'] ?? null),
+            'lga' => $address['lga'] ?? ($ninData['lga'] ?? null),
+            'photo' => $ninData['image'] ?? ($ninData['photo'] ?? null), // Base64 image from NIN
             'nin_verified' => true,
             'nin_verification_date' => now()->toIso8601String(),
         ];

@@ -150,13 +150,14 @@ class YouVerifyService
             ]);
 
             // Make API request to YouVerify NIN endpoint
+            // Note: YouVerify uses 'token' header, not 'Authorization: Bearer'
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
+                'token' => $this->apiKey,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ])
                 ->timeout(30)
-                ->post($this->baseUrl . '/v2/identities/nin', $payload);
+                ->post($this->baseUrl . '/v2/api/identity/ng/nin', $payload);
 
             // Handle response
             $responseData = $response->json();
@@ -176,11 +177,24 @@ class YouVerifyService
                 ];
             }
 
+            // Handle specific HTTP error codes with detailed messages
+            $errorMessage = 'The NIN could not be verified. Please check and try again.';
+            if ($statusCode === 404) {
+                $errorMessage = 'NIN not found. This may be a sandbox limitation. Please use a valid test NIN or contact support.';
+            } elseif ($statusCode === 401 || $statusCode === 403) {
+                $errorMessage = 'API authentication failed. Please check your YouVerify API credentials.';
+            } elseif ($statusCode === 429) {
+                $errorMessage = 'Rate limit exceeded. Please try again in a few moments.';
+            } elseif ($statusCode >= 500) {
+                $errorMessage = 'YouVerify service is temporarily unavailable. Please try again later.';
+            }
+
             // Verification failed
             Log::warning('YouVerify NIN verification failed', [
                 'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
                 'status_code' => $statusCode,
                 'response' => $responseData,
+                'endpoint' => $this->baseUrl . '/v2/api/identity/ng/nin',
             ]);
 
             return [
@@ -188,7 +202,12 @@ class YouVerifyService
                 'verified' => false,
                 'data' => $responseData,
                 'error' => $responseData['message'] ?? 'NIN verification failed',
-                'message' => 'The NIN could not be verified. Please check and try again.',
+                'message' => $errorMessage,
+                'debug' => config('app.debug') ? [
+                    'status_code' => $statusCode,
+                    'endpoint' => $this->baseUrl . '/v2/api/identity/ng/nin',
+                    'response' => $responseData,
+                ] : null,
             ];
         } catch (RequestException $e) {
             Log::error('YouVerify NIN verification HTTP error', [
