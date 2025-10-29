@@ -314,22 +314,34 @@ class YouVerifyService
                 $confidence = $selfieData['confidenceLevel'] ?? null;
                 $match = $selfieData['match'] ?? false;
 
+                // Determine if verification passed
+                // YouVerify uses confidence threshold of 80 for match
+                $verified = $selfieValidation && $match;
+
+                // Build appropriate message
+                if ($verified) {
+                    $message = 'NIN and selfie verified successfully. Face match confidence: ' . $confidence . '%';
+                } elseif ($selfieValidation && !$match) {
+                    $message = 'Selfie does not match NIN photo. Confidence: ' . $confidence . '% (threshold: 80%). Please try again in good lighting.';
+                } else {
+                    $message = 'Selfie validation failed. Please ensure you are in a well-lit area and try again.';
+                }
+
                 Log::info('YouVerify NIN + selfie verification completed', [
                     'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
                     'selfie_validation' => $selfieValidation,
                     'confidence' => $confidence,
                     'match' => $match,
+                    'verified' => $verified,
                 ]);
 
                 return [
                     'success' => true,
-                    'verified' => $selfieValidation && $match,
+                    'verified' => $verified,
                     'data' => $data,
                     'selfie_match' => $match,
                     'confidence' => $confidence,
-                    'message' => $selfieValidation
-                        ? 'NIN and selfie verified successfully'
-                        : 'NIN verified but selfie did not match',
+                    'message' => $message,
                 ];
             }
 
