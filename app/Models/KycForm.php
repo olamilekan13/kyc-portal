@@ -28,6 +28,7 @@ class KycForm extends Model
      */
     protected $fillable = [
         'name',
+        'slug',
         'description',
         'status',
         'created_by',
@@ -70,5 +71,41 @@ class KycForm extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get the route key name for Laravel route model binding.
+     * This allows routing by slug instead of ID.
+     *
+     * @return string
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * Generate a URL-friendly slug from the form name.
+     *
+     * @param string $name
+     * @return string
+     */
+    public static function generateSlug(string $name): string
+    {
+        // Convert to lowercase and replace spaces with hyphens
+        $slug = strtolower(trim($name));
+        $slug = preg_replace('/[^a-z0-9-]+/', '-', $slug);
+        $slug = preg_replace('/-+/', '-', $slug);
+        $slug = trim($slug, '-');
+
+        // Ensure uniqueness
+        $originalSlug = $slug;
+        $counter = 1;
+        while (static::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
     }
 }

@@ -23,37 +23,45 @@ class KycSubmissionController extends Controller
     /**
      * Display the KYC form
      *
-     * @param int $formId The KYC form ID
+     * Supports both slug and ID lookup for backwards compatibility.
+     * Examples: /kyc/company-onboarding OR /kyc/7
+     *
+     * @param string $form The KYC form slug or ID
      * @return \Illuminate\View\View|\Illuminate\Http\Response
      */
-    public function show($formId)
+    public function show($form)
     {
         try {
-            // Find active KYC form with fields relationship
-            $form = KycForm::with('fields')
-                ->where('id', $formId)
+            // Try to find form by slug first, then by ID
+            $kycForm = KycForm::with('fields')
                 ->where('status', true)
+                ->where(function ($query) use ($form) {
+                    $query->where('slug', $form)
+                          ->orWhere('id', is_numeric($form) ? $form : null);
+                })
                 ->first();
 
             // Return 404 if form not found or inactive
-            if (!$form) {
+            if (!$kycForm) {
                 abort(404, 'KYC form not found or is no longer active');
             }
 
             Log::info('KYC form viewed', [
-                'form_id' => $formId,
-                'form_name' => $form->name,
+                'form_id' => $kycForm->id,
+                'form_name' => $kycForm->name,
+                'form_slug' => $kycForm->slug,
+                'accessed_via' => $form,
                 'ip_address' => request()->ip(),
             ]);
 
             // Return view with form data
             return view('kyc.form', [
-                'form' => $form,
-                'fields' => $form->fields,
+                'form' => $kycForm,
+                'fields' => $kycForm->fields,
             ]);
         } catch (Exception $e) {
             Log::error('Error displaying KYC form', [
-                'form_id' => $formId,
+                'form_identifier' => $form,
                 'error' => $e->getMessage(),
             ]);
 
@@ -68,27 +76,33 @@ class KycSubmissionController extends Controller
      * handles file uploads, and creates submission record.
      *
      * @param Request $request
-     * @param int $formId The KYC form ID
+     * @param string $form The KYC form slug or ID
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function submit(Request $request, $formId)
+    public function submit(Request $request, $form)
     {
         try {
-            // Load KYC form with fields
-            $form = KycForm::with('fields')
-                ->where('id', $formId)
+            // Load KYC form with fields (by slug or ID)
+            $kycForm = KycForm::with('fields')
                 ->where('status', true)
+                ->where(function ($query) use ($form) {
+                    $query->where('slug', $form)
+                          ->orWhere('id', is_numeric($form) ? $form : null);
+                })
                 ->first();
 
-            if (!$form) {
-                return back()
-                    ->withErrors(['form' => 'KYC form not found or is no longer active'])
-                    ->withInput();
+            // Return 404 if form not found
+            if (!$kycForm) {
+                abort(404, 'KYC form not found or is no longer active');
             }
 
+            // From here on, use $kycForm as $form for compatibility with existing code
+            $form = $kycForm;
+
             Log::info('KYC form submission initiated', [
-                'form_id' => $formId,
+                'form_id' => $form->id,
                 'form_name' => $form->name,
+                'form_slug' => $form->slug,
                 'ip_address' => $request->ip(),
             ]);
 

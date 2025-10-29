@@ -40,7 +40,28 @@ class KycFormResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->label('Form Name')
-                            ->placeholder('Enter form name'),
+                            ->placeholder('Enter form name')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, Set $set, Get $get) {
+                                // Auto-generate slug from form name if slug is empty
+                                if ($state && !$get('slug')) {
+                                    $set('slug', KycForm::generateSlug($state));
+                                }
+                            }),
+
+                        FormFields\TextInput::make('slug')
+                            ->required()
+                            ->maxLength(255)
+                            ->unique(KycForm::class, 'slug', ignoreRecord: true)
+                            ->label('URL Slug')
+                            ->placeholder('e.g., company-onboarding')
+                            ->helperText('This will be used in the form URL: /kyc/your-slug')
+                            ->regex('/^[a-z0-9-]+$/')
+                            ->rules(['regex:/^[a-z0-9-]+$/'])
+                            ->validationMessages([
+                                'regex' => 'The slug can only contain lowercase letters, numbers, and hyphens.',
+                            ])
+                            ->suffixIcon('heroicon-o-link'),
 
                         FormFields\Textarea::make('description')
                             ->rows(3)
@@ -164,6 +185,16 @@ class KycFormResource extends Resource
                     ->sortable()
                     ->label('Form Name')
                     ->weight('medium'),
+
+                Tables\Columns\TextColumn::make('slug')
+                    ->searchable()
+                    ->sortable()
+                    ->label('URL Slug')
+                    ->copyable()
+                    ->copyMessage('Slug copied!')
+                    ->icon('heroicon-o-link')
+                    ->description(fn (KycForm $record): string => url('/kyc/' . $record->slug))
+                    ->tooltip('Click to copy slug'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()

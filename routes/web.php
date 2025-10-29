@@ -22,12 +22,13 @@ Route::prefix('api')->name('api.')->group(function () {
 
 // Public KYC Submission Routes
 Route::prefix('kyc')->name('kyc.')->group(function () {
-    // Show KYC form
-    Route::get('/{formId}', [KycSubmissionController::class, 'show'])
+    // Show KYC form (by slug or ID)
+    // Examples: /kyc/company-onboarding OR /kyc/7
+    Route::get('/{form}', [KycSubmissionController::class, 'show'])
         ->name('show');
 
     // Submit KYC form with rate limiting (10 submissions per hour per IP)
-    Route::post('/{formId}/submit', [KycSubmissionController::class, 'submit'])
+    Route::post('/{form}/submit', [KycSubmissionController::class, 'submit'])
         ->middleware('throttle:10,60')
         ->name('submit');
 
