@@ -239,24 +239,32 @@ class YouVerifyService
     }
 
     /**
-     * Verify liveness selfie and match with NIN photo
+     * Verify NIN with selfie validation (liveness check)
      *
-     * Performs liveness detection on a selfie image and optionally
-     * compares it with the photo from NIN verification.
+     * YouVerify integrates liveness/selfie verification into the NIN verification endpoint
+     * using the validations.selfie field, not a separate endpoint.
      *
-     * @param string $selfieBase64 Base64 encoded selfie image
-     * @param string|null $ninPhoto Base64 or URL of NIN photo for face matching
+     * @param string $nin The 11-digit National Identification Number
+     * @param string $selfieBase64 Base64 encoded selfie image for face matching
      * @return array{success: bool, verified: bool, data?: array, error?: string, message?: string}
      *
-     * @throws Exception If liveness verification encounters an error
+     * @throws Exception If verification encounters an error
      */
-    public function verifyLiveness(string $selfieBase64, ?string $ninPhoto = null): array
+    public function verifyNINWithSelfie(string $nin, string $selfieBase64): array
     {
         try {
+            // Validate NIN format (11 digits)
+            if (!preg_match('/^\d{11}$/', $nin)) {
+                return [
+                    'success' => false,
+                    'verified' => false,
+                    'error' => 'Invalid NIN format',
+                    'message' => 'NIN must be exactly 11 digits',
+                ];
+            }
+
             // Validate base64 image
             if (!$this->isValidBase64Image($selfieBase64)) {
-                Log::warning('YouVerify liveness verification failed: Invalid image format');
-
                 return [
                     'success' => false,
                     'verified' => false,
@@ -265,56 +273,76 @@ class YouVerifyService
                 ];
             }
 
-            // Build API payload
+            // Build API payload with selfie validation
+            // Per YouVerify docs: include validations.selfie for face matching
             $payload = [
-                'image' => $selfieBase64,
+                'id' => $nin,
                 'isSubjectConsent' => true,
+                'validations' => [
+                    'selfie' => [
+                        'image' => $selfieBase64,
+                    ],
+                ],
             ];
 
-            // Add reference photo for face matching if provided
-            if ($ninPhoto) {
-                $payload['referenceImage'] = $ninPhoto;
-            }
-
-            // Log the verification request
-            Log::info('YouVerify liveness verification initiated', [
-                'has_reference_image' => !empty($ninPhoto),
+            Log::info('YouVerify NIN verification with selfie initiated', [
+                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
             ]);
 
-            // Make API request to YouVerify liveness endpoint
+            // Make API request
             $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->apiKey,
+                'token' => $this->apiKey,
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
             ])
                 ->timeout(60) // Longer timeout for image processing
-                ->post($this->baseUrl . '/v2/identities/faces/liveness', $payload);
+                ->post($this->baseUrl . '/v2/api/identity/ng/nin', $payload);
 
-            // Handle response
             $responseData = $response->json();
             $statusCode = $response->status();
 
             if ($response->successful() && isset($responseData['success']) && $responseData['success'] === true) {
                 $data = $responseData['data'] ?? [];
-                $isLive = $data['isLive'] ?? false;
-                $faceMatch = $data['faceMatch'] ?? null;
 
-                Log::info('YouVerify liveness verification successful', [
-                    'is_live' => $isLive,
-                    'face_match_score' => $faceMatch,
-                    'response_status' => $statusCode,
+                // Check selfie validation result
+                $selfieValidation = $data['selfieValidation'] ?? false;
+                $allValidationPassed = $data['allValidationPassed'] ?? false;
+
+                // Get selfie confidence if available
+                $validations = $data['validations'] ?? [];
+                $selfieData = $validations['selfie']['selfieVerification'] ?? [];
+                $confidence = $selfieData['confidenceLevel'] ?? null;
+                $match = $selfieData['match'] ?? false;
+
+                Log::info('YouVerify NIN + selfie verification completed', [
+                    'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
+                    'selfie_validation' => $selfieValidation,
+                    'confidence' => $confidence,
+                    'match' => $match,
                 ]);
 
                 return [
                     'success' => true,
-                    'verified' => $isLive && ($ninPhoto ? ($faceMatch >= 0.7) : true), // 70% match threshold
+                    'verified' => $selfieValidation && $match,
                     'data' => $data,
-                    'message' => 'Liveness verification successful',
+                    'selfie_match' => $match,
+                    'confidence' => $confidence,
+                    'message' => $selfieValidation
+                        ? 'NIN and selfie verified successfully'
+                        : 'NIN verified but selfie did not match',
                 ];
             }
 
-            // Verification failed
-            Log::warning('YouVerify liveness verification failed', [
+            // Handle specific error codes
+            $errorMessage = 'Verification failed. Please try again.';
+            if ($statusCode === 404) {
+                $errorMessage = 'NIN not found. Please use test NIN 11111111111 in sandbox.';
+            } elseif ($statusCode === 401 || $statusCode === 403) {
+                $errorMessage = 'API authentication failed.';
+            }
+
+            Log::warning('YouVerify NIN + selfie verification failed', [
+                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
                 'status_code' => $statusCode,
                 'response' => $responseData,
             ]);
@@ -323,34 +351,42 @@ class YouVerifyService
                 'success' => false,
                 'verified' => false,
                 'data' => $responseData,
-                'error' => $responseData['message'] ?? 'Liveness verification failed',
-                'message' => 'The liveness check failed. Please ensure you are in a well-lit area and try again.',
-            ];
-        } catch (RequestException $e) {
-            Log::error('YouVerify liveness verification HTTP error', [
-                'error' => $e->getMessage(),
-                'response' => $e->response?->json(),
-            ]);
-
-            return [
-                'success' => false,
-                'verified' => false,
-                'error' => 'API request failed: ' . $e->getMessage(),
-                'message' => 'Failed to connect to verification service. Please try again later.',
+                'error' => $responseData['message'] ?? 'Verification failed',
+                'message' => $errorMessage,
             ];
         } catch (Exception $e) {
-            Log::error('YouVerify liveness verification error', [
+            Log::error('YouVerify NIN + selfie verification error', [
+                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
                 'verified' => false,
                 'error' => $e->getMessage(),
-                'message' => 'An unexpected error occurred during liveness verification.',
+                'message' => 'An unexpected error occurred during verification.',
             ];
         }
+    }
+
+    /**
+     * Verify liveness selfie (legacy method - now uses NIN with selfie)
+     *
+     * @deprecated Use verifyNINWithSelfie() instead
+     * @param string $selfieBase64 Base64 encoded selfie image
+     * @param string|null $ninPhoto Not used - selfie is matched against NIN automatically
+     * @return array{success: bool, verified: bool, data?: array, error?: string, message?: string}
+     */
+    public function verifyLiveness(string $selfieBase64, ?string $ninPhoto = null): array
+    {
+        Log::warning('verifyLiveness() is deprecated. Use verifyNINWithSelfie() for proper integration.');
+
+        return [
+            'success' => false,
+            'verified' => false,
+            'error' => 'Liveness verification requires NIN. Please verify NIN first, then use NIN with selfie validation.',
+            'message' => 'YouVerify requires NIN for selfie verification. Please complete NIN verification first.',
+        ];
     }
 
     /**

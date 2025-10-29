@@ -65,49 +65,52 @@ class LivenessVerificationController extends Controller
                 ], 429);
             }
 
-            // Validate request
+            // Validate request - now requires NIN for proper verification
             $validated = $request->validate([
                 'selfie' => [
                     'required',
                     'string',
                 ],
-                'nin_photo' => [
-                    'nullable',
+                'nin' => [
+                    'required',
                     'string',
+                    'regex:/^\d{11}$/',
                 ],
             ], [
                 'selfie.required' => 'Selfie image is required',
+                'nin.required' => 'NIN is required for liveness verification',
+                'nin.regex' => 'NIN must be exactly 11 digits',
             ]);
 
             RateLimiter::hit($key, 60); // Increment rate limiter
 
             Log::info('Liveness verification request received', [
-                'has_nin_photo' => !empty($validated['nin_photo']),
+                'nin' => substr($validated['nin'], 0, 3) . '****' . substr($validated['nin'], -2),
                 'ip' => $request->ip(),
             ]);
 
-            // Extract base64 image data
+            // Extract data
             $selfieBase64 = $validated['selfie'];
-            $ninPhoto = $validated['nin_photo'] ?? null;
+            $nin = $validated['nin'];
 
-            // Call YouVerify API for liveness verification
-            $result = $this->youVerifyService->verifyLiveness($selfieBase64, $ninPhoto);
+            // Call YouVerify API for NIN + selfie verification (combined)
+            $result = $this->youVerifyService->verifyNINWithSelfie($nin, $selfieBase64);
 
             // If verification successful
             if ($result['success'] && $result['verified']) {
                 Log::info('Liveness verification successful', [
-                    'is_live' => $result['data']['isLive'] ?? false,
-                    'face_match' => $result['data']['faceMatch'] ?? null,
+                    'selfie_match' => $result['selfie_match'] ?? false,
+                    'confidence' => $result['confidence'] ?? null,
                 ]);
 
                 return response()->json([
                     'success' => true,
                     'verified' => true,
-                    'message' => 'Liveness verified successfully',
+                    'message' => $result['message'] ?? 'Liveness verified successfully',
                     'data' => [
-                        'is_live' => $result['data']['isLive'] ?? true,
-                        'face_match_score' => $result['data']['faceMatch'] ?? null,
-                        'confidence' => $result['data']['confidence'] ?? null,
+                        'is_live' => true,
+                        'face_match_score' => $result['confidence'] ?? null,
+                        'selfie_match' => $result['selfie_match'] ?? false,
                     ],
                 ], 200);
             }

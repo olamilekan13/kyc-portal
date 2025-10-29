@@ -720,10 +720,19 @@ function fieldData{{ $index }}() {
             this.cameraActive = false;
         },
 
-        // Verify liveness with API
+        // Verify liveness with API (requires NIN)
         async verifyLiveness() {
             if (!this.selfieCapture) {
                 this.livenessError = 'Please capture a selfie first';
+                return;
+            }
+
+            // Find NIN field value - liveness verification requires NIN for face matching
+            const ninInput = document.querySelector('input[type="text"][maxlength="11"]');
+            const ninValue = ninInput?.value || '';
+
+            if (!ninValue || ninValue.length !== 11) {
+                this.livenessError = 'Please verify your NIN first before taking a selfie';
                 return;
             }
 
@@ -731,18 +740,6 @@ function fieldData{{ $index }}() {
             this.livenessError = '';
 
             try {
-                // Get NIN photo from NIN verification data if available
-                let ninPhoto = null;
-                const ninVerificationDataStr = document.querySelector('[name$="_verification_data"]')?.value;
-                if (ninVerificationDataStr) {
-                    try {
-                        const ninData = JSON.parse(ninVerificationDataStr);
-                        ninPhoto = ninData.photo || null;
-                    } catch (e) {
-                        console.log('No NIN data for face matching');
-                    }
-                }
-
                 const response = await fetch('{{ route('api.liveness.verify') }}', {
                     method: 'POST',
                     headers: {
@@ -752,14 +749,14 @@ function fieldData{{ $index }}() {
                     },
                     body: JSON.stringify({
                         selfie: this.selfieCapture,
-                        nin_photo: ninPhoto
+                        nin: ninValue
                     })
                 });
 
                 const result = await response.json();
 
                 if (result.success && result.verified) {
-                    // Liveness verified successfully
+                    // Liveness verified successfully (face matches NIN photo)
                     this.livenessVerified = true;
                     this.livenessError = '';
                     this.faceMatchScore = result.data?.face_match_score || null;
@@ -770,6 +767,11 @@ function fieldData{{ $index }}() {
                     // Verification failed
                     this.livenessVerified = false;
                     this.livenessError = result.message || 'Liveness verification failed. Please try again.';
+
+                    // Log debug info if available
+                    if (result.debug) {
+                        console.error('Liveness Verification Debug Info:', result.debug);
+                    }
                 }
             } catch (error) {
                 console.error('Liveness verification error:', error);
