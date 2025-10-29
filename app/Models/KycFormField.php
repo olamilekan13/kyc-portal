@@ -36,6 +36,8 @@ class KycFormField extends Model
         'select' => 'Select',
         'textarea' => 'Textarea',
         'number' => 'Number',
+        'nin' => 'NIN Verification',
+        'liveness_selfie' => 'Liveness Selfie',
     ];
 
     /**

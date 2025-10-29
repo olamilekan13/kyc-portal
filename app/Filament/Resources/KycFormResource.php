@@ -49,19 +49,23 @@ class KycFormResource extends Resource
                                 }
                             }),
 
-                        FormFields\TextInput::make('slug')
-                            ->required()
-                            ->maxLength(255)
-                            ->unique(KycForm::class, 'slug', ignoreRecord: true)
-                            ->label('URL Slug')
-                            ->placeholder('e.g., company-onboarding')
-                            ->helperText('This will be used in the form URL: /kyc/your-slug')
-                            ->regex('/^[a-z0-9-]+$/')
-                            ->rules(['regex:/^[a-z0-9-]+$/'])
-                            ->validationMessages([
-                                'regex' => 'The slug can only contain lowercase letters, numbers, and hyphens.',
-                            ])
-                            ->suffixIcon('heroicon-o-link'),
+                        // FormFields\TextInput::make('slug')
+                        //     ->required()
+                        //     ->maxLength(255)
+                        //     ->unique(KycForm::class, 'slug', ignoreRecord: true)
+                        //     ->label('URL Slug')
+                        //     ->placeholder('e.g., company-onboarding')
+                        //     ->helperText('This will be used in the form URL: /kyc/your-slug')
+                        //     ->regex('/^[a-z0-9-]+$/')
+                        //     ->rules(['regex:/^[a-z0-9-]+$/'])
+                        //     ->validationMessages([
+                        //         'regex' => 'The slug can only contain lowercase letters, numbers, and hyphens.',
+                        //     ])
+                        //     ->suffixIcon('heroicon-o-link'),
+
+                        FormFields\Hidden::make('slug')
+                            ->default(fn (Get $get) => $get('name') ? KycForm::generateSlug($get('name')) : null)
+                            ->dehydrateStateUsing(fn ($state, Get $get) => $state ?: KycForm::generateSlug($get('name'))),
 
                         FormFields\Textarea::make('description')
                             ->rows(3)
@@ -97,17 +101,24 @@ class KycFormResource extends Resource
                                     ->searchable()
                                     ->label('Field Type')
                                     ->live()
-                                    ->disabled(fn (Get $get): bool => in_array($get('field_type'), ['nin', 'liveness_selfie']))
-                                    ->helperText(fn (Get $get): ?string =>
-                                        in_array($get('field_type'), ['nin', 'liveness_selfie'])
-                                            ? '⚠️ This field type cannot be changed as it has special functionality.'
-                                            : null
-                                    )
                                     ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                        // Auto-generate field_name from field_label if not manually edited
-                                        $fieldLabel = $get('field_label');
-                                        if ($fieldLabel && !$get('field_name')) {
-                                            $set('field_name', Str::slug($fieldLabel, '_'));
+                                        // Auto-set field_name for special field types
+                                        if ($state === 'nin') {
+                                            $set('field_name', 'nin_number');
+                                            if (!$get('field_label')) {
+                                                $set('field_label', 'National Identity Number (NIN)');
+                                            }
+                                        } elseif ($state === 'liveness_selfie') {
+                                            $set('field_name', 'liveness_selfie');
+                                            if (!$get('field_label')) {
+                                                $set('field_label', 'Take a Selfie');
+                                            }
+                                        } else {
+                                            // Auto-generate field_name from field_label for regular fields
+                                            $fieldLabel = $get('field_label');
+                                            if ($fieldLabel && !$get('field_name')) {
+                                                $set('field_name', Str::slug($fieldLabel, '_'));
+                                            }
                                         }
                                     }),
 
@@ -127,12 +138,7 @@ class KycFormResource extends Resource
                                     ->required()
                                     ->label('Field Name/ID')
                                     ->placeholder('e.g., first_name')
-                                    ->helperText(fn (Get $get): string =>
-                                        in_array($get('field_type'), ['nin', 'liveness_selfie'])
-                                            ? '⚠️ This field name cannot be changed for special field types.'
-                                            : 'Use lowercase, no spaces (e.g., first_name)'
-                                    )
-                                    ->disabled(fn (Get $get): bool => in_array($get('field_type'), ['nin', 'liveness_selfie']))
+                                    ->helperText('Use lowercase, no spaces (e.g., first_name)')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, Set $set) {
                                         // Clean the field name: lowercase, no spaces, alphanumeric + underscores only
@@ -192,15 +198,15 @@ class KycFormResource extends Resource
                     ->label('Form Name')
                     ->weight('medium'),
 
-                Tables\Columns\TextColumn::make('slug')
-                    ->searchable()
-                    ->sortable()
-                    ->label('URL Slug')
-                    ->copyable()
-                    ->copyMessage('Slug copied!')
-                    ->icon('heroicon-o-link')
-                    ->description(fn (KycForm $record): string => url('/kyc/' . $record->slug))
-                    ->tooltip('Click to copy slug'),
+                // Tables\Columns\TextColumn::make('slug')
+                //     ->searchable()
+                //     ->sortable()
+                //     ->label('URL Slug')
+                //     ->copyable()
+                //     ->copyMessage('Slug copied!')
+                //     ->icon('heroicon-o-link')
+                //     ->description(fn (KycForm $record): string => url('/kyc/' . $record->slug))
+                //     ->tooltip('Click to copy slug'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
