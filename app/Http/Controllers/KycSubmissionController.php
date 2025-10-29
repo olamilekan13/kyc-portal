@@ -21,6 +21,46 @@ use Exception;
 class KycSubmissionController extends Controller
 {
     /**
+     * Display the default KYC form
+     *
+     * Accessed via: /kyc (without any slug or ID)
+     * Shows the form marked as "default" in admin panel
+     *
+     * @return \Illuminate\View\View|\Illuminate\Http\Response
+     */
+    public function showDefault()
+    {
+        try {
+            // Get the default form
+            $kycForm = KycForm::getDefault();
+
+            // Return 404 if no default form is set
+            if (!$kycForm) {
+                abort(404, 'No default KYC form has been set. Please contact the administrator.');
+            }
+
+            Log::info('Default KYC form viewed', [
+                'form_id' => $kycForm->id,
+                'form_name' => $kycForm->name,
+                'form_slug' => $kycForm->slug,
+                'ip_address' => request()->ip(),
+            ]);
+
+            // Return view with form data
+            return view('kyc.form', [
+                'form' => $kycForm,
+                'fields' => $kycForm->fields,
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error displaying default KYC form', [
+                'error' => $e->getMessage(),
+            ]);
+
+            abort(500, 'Unable to load default KYC form');
+        }
+    }
+
+    /**
      * Display the KYC form
      *
      * Supports both slug and ID lookup for backwards compatibility.

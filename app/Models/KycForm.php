@@ -31,6 +31,7 @@ class KycForm extends Model
         'slug',
         'description',
         'status',
+        'is_default',
         'created_by',
     ];
 
@@ -41,6 +42,7 @@ class KycForm extends Model
      */
     protected $casts = [
         'status' => 'boolean',
+        'is_default' => 'boolean',
     ];
 
     /**
@@ -107,5 +109,53 @@ class KycForm extends Model
         }
 
         return $slug;
+    }
+
+    /**
+     * Get the default KYC form
+     *
+     * @return KycForm|null
+     */
+    public static function getDefault(): ?KycForm
+    {
+        return static::where('is_default', true)
+            ->where('status', true)
+            ->with('fields')
+            ->first();
+    }
+
+    /**
+     * Set this form as the default and unset all others
+     * Ensures only one form can be default at a time
+     *
+     * @return bool
+     */
+    public function setAsDefault(): bool
+    {
+        // Start a database transaction
+        return \DB::transaction(function () {
+            // Unset all other forms as default
+            static::where('is_default', true)->update(['is_default' => false]);
+
+            // Set this form as default
+            $this->is_default = true;
+            return $this->save();
+        });
+    }
+
+    /**
+     * Boot method to handle default form logic
+     */
+    protected static function booted(): void
+    {
+        // When saving a form, ensure only one is default
+        static::saving(function (KycForm $form) {
+            if ($form->is_default) {
+                // Unset all other forms as default
+                static::where('id', '!=', $form->id)
+                    ->where('is_default', true)
+                    ->update(['is_default' => false]);
+            }
+        });
     }
 }

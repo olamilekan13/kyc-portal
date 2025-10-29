@@ -22,6 +22,14 @@ Route::prefix('api')->name('api.')->group(function () {
 
 // Public KYC Submission Routes
 Route::prefix('kyc')->name('kyc.')->group(function () {
+    // Show default KYC form when accessing /kyc directly
+    Route::get('/', [KycSubmissionController::class, 'showDefault'])
+        ->name('default');
+
+    // Success page (must come before wildcard route)
+    Route::get('/success/{submissionId}', [KycSubmissionController::class, 'success'])
+        ->name('success');
+
     // Show KYC form (by slug or ID)
     // Examples: /kyc/company-onboarding OR /kyc/7
     Route::get('/{form}', [KycSubmissionController::class, 'show'])
@@ -31,8 +39,4 @@ Route::prefix('kyc')->name('kyc.')->group(function () {
     Route::post('/{form}/submit', [KycSubmissionController::class, 'submit'])
         ->middleware('throttle:10,60')
         ->name('submit');
-
-    // Success page
-    Route::get('/success/{submissionId}', [KycSubmissionController::class, 'success'])
-        ->name('success');
 });

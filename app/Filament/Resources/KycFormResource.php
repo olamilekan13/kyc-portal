@@ -75,6 +75,12 @@ class KycFormResource extends Resource
                             ->inline(false)
                             ->helperText('Enable or disable this form'),
 
+                        FormFields\Toggle::make('is_default')
+                            ->label('Set as Default Form')
+                            ->default(false)
+                            ->inline(false)
+                            ->helperText('⭐ The default form will be shown when users visit /kyc directly. Only ONE form can be default at a time.'),
+
                         FormFields\Hidden::make('created_by')
                             ->default(auth()->id()),
                     ])
@@ -201,6 +207,16 @@ class KycFormResource extends Resource
                     ->label('Status')
                     ->formatStateUsing(fn (bool $state): string => $state ? 'Active' : 'Inactive')
                     ->color(fn (bool $state): string => $state ? 'success' : 'gray'),
+
+                Tables\Columns\IconColumn::make('is_default')
+                    ->label('Default')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-star')
+                    ->falseIcon('')
+                    ->trueColor('warning')
+                    ->tooltip(fn (KycForm $record): ?string =>
+                        $record->is_default ? 'This is the default form (shown at /kyc)' : null
+                    ),
 
                 Tables\Columns\TextColumn::make('creator.name')
                     ->label('Created By')
