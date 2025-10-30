@@ -29,9 +29,12 @@ class KycSubmission extends Model
      * Submission status constants
      */
     public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_DISAPPROVED = 'declined'; // Changed from 'disapproved' to match database enum
+
+    // Legacy status constants (kept for backwards compatibility)
     public const STATUS_UNDER_REVIEW = 'under_review';
     public const STATUS_VERIFIED = 'verified';
-    public const STATUS_APPROVED = 'approved';
     public const STATUS_DECLINED = 'declined';
 
     /**
@@ -117,10 +120,8 @@ class KycSubmission extends Model
     {
         return [
             self::STATUS_PENDING => 'Pending',
-            self::STATUS_UNDER_REVIEW => 'Under Review',
-            self::STATUS_VERIFIED => 'Verified',
             self::STATUS_APPROVED => 'Approved',
-            self::STATUS_DECLINED => 'Declined',
+            self::STATUS_DISAPPROVED => 'Disapproved',
         ];
     }
 

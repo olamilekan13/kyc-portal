@@ -19,108 +19,85 @@ class ViewKycSubmission extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\Action::make('verify')
-                ->label('Verify with YouVerify')
-                ->icon('heroicon-o-shield-check')
-                ->color('info')
-                ->visible(fn (KycSubmission $record): bool =>
-                    $record->verification_status === KycSubmission::VERIFICATION_NOT_VERIFIED
-                )
-                ->requiresConfirmation()
-                ->modalHeading('Verify Submission with YouVerify')
-                ->modalDescription('This will send the submission data to YouVerify for identity verification.')
-                ->modalIcon('heroicon-o-shield-check')
-                ->action(function (KycSubmission $record) {
-                    // Use the VerifyKycSubmissionAction to integrate with YouVerify
-                    $verifyAction = app(\App\Actions\VerifyKycSubmissionAction::class);
-                    $result = $verifyAction->execute($record);
-
-                    if ($result['success'] && $result['verified']) {
-                        Notification::make()
-                            ->title('Verification completed successfully')
-                            ->body($result['message'])
-                            ->success()
-                            ->send();
-                    } else {
-                        Notification::make()
-                            ->title('Verification failed')
-                            ->body($result['message'] ?? 'An error occurred during verification.')
-                            ->danger()
-                            ->send();
-                    }
-                }),
-
             Actions\Action::make('approve')
                 ->label('Approve')
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(fn (KycSubmission $record): bool =>
-                    $record->status === KycSubmission::STATUS_VERIFIED
+                    $record->status === KycSubmission::STATUS_PENDING || $record->status === KycSubmission::STATUS_VERIFIED
                 )
                 ->requiresConfirmation()
                 ->modalHeading('Approve Submission')
-                ->modalDescription('Are you sure you want to approve this KYC submission?')
+                ->modalDescription('Are you sure you want to approve this KYC submission? An approval email will be sent to the applicant.')
                 ->modalIcon('heroicon-o-check-circle')
                 ->modalSubmitActionLabel('Yes, Approve')
                 ->action(function (KycSubmission $record) {
-                    $record->update([
-                        'status' => KycSubmission::STATUS_APPROVED,
-                        'reviewed_by' => auth()->id(),
-                        'reviewed_at' => now(),
-                    ]);
+                    try {
+                        $approveAction = app(\App\Actions\ApproveKycSubmissionAction::class);
+                        $approveAction->execute($record, auth()->id());
 
-                    Notification::make()
-                        ->title('Submission approved successfully')
-                        ->body("Submission #{$record->id} has been approved.")
-                        ->success()
-                        ->send();
+                        Notification::make()
+                            ->title('Submission approved successfully')
+                            ->body("Submission #{$record->id} has been approved and email sent to applicant.")
+                            ->success()
+                            ->send();
 
-                    return redirect()->route('filament.exit.resources.kyc-submissions.index');
+                        return redirect()->route('filament.dashboard.resources.kyc-submissions.index');
+                    } catch (\Exception $e) {
+                        Notification::make()
+                            ->title('Approval failed')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 }),
 
-            Actions\Action::make('decline')
-                ->label('Decline')
+            Actions\Action::make('disapprove')
+                ->label('Disapprove')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->visible(fn (KycSubmission $record): bool =>
-                    $record->status === KycSubmission::STATUS_VERIFIED
+                    $record->status === KycSubmission::STATUS_PENDING || $record->status === KycSubmission::STATUS_VERIFIED
                 )
                 ->form([
                     Forms\Components\Textarea::make('decline_reason')
-                        ->label('Decline Reason')
+                        ->label('Reason for Disapproval')
                         ->required()
                         ->rows(4)
-                        ->placeholder('Please provide a detailed reason for declining this submission...')
-                        ->helperText('This reason will be saved and may be shared with the applicant.'),
+                        ->minLength(10)
+                        ->placeholder('Please provide a detailed reason for disapproving this submission...')
+                        ->helperText('This reason will be sent to the applicant via email.'),
                 ])
-                ->modalHeading('Decline Submission')
-                ->modalDescription('Please provide a reason for declining this KYC submission.')
+                ->modalHeading('Disapprove Submission')
+                ->modalDescription('Please provide a reason for disapproving this KYC submission. The reason will be sent to the applicant.')
                 ->modalIcon('heroicon-o-x-circle')
-                ->modalSubmitActionLabel('Decline Submission')
+                ->modalSubmitActionLabel('Disapprove Submission')
                 ->action(function (KycSubmission $record, array $data) {
-                    $record->update([
-                        'status' => KycSubmission::STATUS_DECLINED,
-                        'reviewed_by' => auth()->id(),
-                        'reviewed_at' => now(),
-                        'decline_reason' => $data['decline_reason'],
-                    ]);
+                    try {
+                        $declineAction = app(\App\Actions\DeclineKycSubmissionAction::class);
+                        $declineAction->execute($record, auth()->id(), $data['decline_reason']);
 
-                    Notification::make()
-                        ->title('Submission declined')
-                        ->body("Submission #{$record->id} has been declined.")
-                        ->warning()
-                        ->send();
+                        Notification::make()
+                            ->title('Submission disapproved')
+                            ->body("Submission #{$record->id} has been disapproved and email sent to applicant.")
+                            ->warning()
+                            ->send();
 
-                    return redirect()->route('filament.exit.resources.kyc-submissions.index');
+                        return redirect()->route('filament.dashboard.resources.kyc-submissions.index');
+                    } catch (\Exception $e) {
+                        Notification::make()
+                            ->title('Disapproval failed')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 }),
 
             Actions\DeleteAction::make()
-                ->visible(fn (KycSubmission $record): bool =>
-                    $record->status === KycSubmission::STATUS_DECLINED
-                )
                 ->requiresConfirmation()
                 ->modalHeading('Delete Submission')
-                ->modalDescription('Are you sure you want to permanently delete this submission? This action cannot be undone.'),
+                ->modalDescription('Are you sure you want to permanently delete this submission? This action cannot be undone.')
+                ->successRedirectUrl(route('filament.dashboard.resources.kyc-submissions.index')),
         ];
     }
 

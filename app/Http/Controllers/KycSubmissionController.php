@@ -154,7 +154,7 @@ class KycSubmissionController extends Controller
 
             if ($validator->fails()) {
                 Log::warning('KYC form validation failed', [
-                    'form_id' => $formId,
+                    'form_id' => $form->id,
                     'errors' => $validator->errors()->toArray(),
                     'ip_address' => $request->ip(),
                 ]);
@@ -177,7 +177,7 @@ class KycSubmissionController extends Controller
             ]);
 
             Log::info('KYC submission created successfully', [
-                'form_id' => $formId,
+                'form_id' => $form->id,
                 'submission_id' => $submission->id,
                 'ip_address' => $request->ip(),
             ]);
@@ -190,7 +190,7 @@ class KycSubmissionController extends Controller
                 ->withInput();
         } catch (Exception $e) {
             Log::error('Error submitting KYC form', [
-                'form_id' => $formId,
+                'form_id' => $form->id ?? null,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'ip_address' => $request->ip(),

@@ -63,7 +63,7 @@ class DeclineKycSubmissionAction
             try {
                 // Update submission status
                 $submission->update([
-                    'status' => KycSubmission::STATUS_DECLINED,
+                    'status' => KycSubmission::STATUS_DISAPPROVED,
                     'reviewed_by' => $reviewerId,
                     'reviewed_at' => now(),
                     'decline_reason' => $reason,
@@ -115,20 +115,12 @@ class DeclineKycSubmissionAction
      */
     protected function validateInputs(KycSubmission $submission, string $reason): void
     {
-        // Check if submission is already declined
-        if ($submission->status === KycSubmission::STATUS_DECLINED) {
-            throw new Exception('Submission has already been declined');
+        // Check if submission is already disapproved
+        if ($submission->status === KycSubmission::STATUS_DISAPPROVED || $submission->status === KycSubmission::STATUS_DECLINED) {
+            throw new Exception('Submission has already been disapproved');
         }
 
-        // Check if submission is already approved
-        if ($submission->status === KycSubmission::STATUS_APPROVED) {
-            throw new Exception('Cannot decline an approved submission');
-        }
-
-        // Check if submission is verified (can only decline verified submissions)
-        if ($submission->status !== KycSubmission::STATUS_VERIFIED) {
-            throw new Exception('Submission must be verified before it can be declined. Current status: ' . $submission->status);
-        }
+        // Allow disapproving approved submissions as admin can reverse decisions
 
         // Validate decline reason
         if (empty(trim($reason))) {
@@ -308,12 +300,12 @@ MESSAGE;
             ->withProperties([
                 'submission_id' => $submission->id,
                 'old_status' => $submission->getOriginal('status'),
-                'new_status' => KycSubmission::STATUS_DECLINED,
+                'new_status' => KycSubmission::STATUS_DISAPPROVED,
                 'reviewed_by' => $reviewer->id,
                 'reviewer_name' => $reviewer->name,
                 'reviewed_at' => $submission->reviewed_at->toIso8601String(),
                 'decline_reason' => $reason,
             ])
-            ->log('KYC submission declined');
+            ->log('KYC submission disapproved');
     }
 }

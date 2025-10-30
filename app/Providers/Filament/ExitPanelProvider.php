@@ -6,7 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
+use App\Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -25,9 +25,10 @@ class ExitPanelProvider extends PanelProvider
     {
         return $panel
             ->default()
-            ->id('exit')
-            ->path('exit')
+            ->id('dashboard')
+            ->path('dashboard')
             ->login()
+            ->brandName('KYC Dashboard')
             ->colors([
                 'primary' => Color::Amber,
             ])
@@ -39,7 +40,6 @@ class ExitPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,

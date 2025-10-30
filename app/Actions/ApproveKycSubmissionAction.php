@@ -116,15 +116,10 @@ class ApproveKycSubmissionAction
             throw new Exception('Submission has already been approved');
         }
 
-        // Check if submission is already declined
-        if ($submission->status === KycSubmission::STATUS_DECLINED) {
-            throw new Exception('Cannot approve a declined submission');
-        }
+        // Allow approving declined submissions as admin can reverse decisions
 
-        // Check if submission is verified
-        if ($submission->status !== KycSubmission::STATUS_VERIFIED) {
-            throw new Exception('Submission must be verified before it can be approved. Current status: ' . $submission->status);
-        }
+        // Allow approving pending submissions without verification requirement
+        // (verification is optional, not mandatory for approval)
     }
 
     /**

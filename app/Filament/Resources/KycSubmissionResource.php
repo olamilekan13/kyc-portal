@@ -6,6 +6,7 @@ use App\Filament\Resources\KycSubmissionResource\Pages;
 use App\Models\KycForm;
 use App\Models\KycSubmission;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Forms\Components as FormFields;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -47,48 +48,13 @@ class KycSubmissionResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('applicant_name')
-                    ->label('Applicant Name')
-                    ->searchable()
-                    ->formatStateUsing(function (KycSubmission $record): string {
-                        $data = $record->submission_data;
-                        // Try common name field variations
-                        return $data['full_name']
-                            ?? $data['name']
-                            ?? ($data['first_name'] ?? '') . ' ' . ($data['last_name'] ?? '')
-                            ?? 'N/A';
-                    })
-                    ->sortable(false),
-
-                Tables\Columns\TextColumn::make('applicant_email')
-                    ->label('Applicant Email')
-                    ->searchable()
-                    ->formatStateUsing(function (KycSubmission $record): string {
-                        $data = $record->submission_data;
-                        return $data['email'] ?? $data['email_address'] ?? 'N/A';
-                    })
-                    ->sortable(false),
-
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
                     ->color(fn (string $state): string => match ($state) {
-                        KycSubmission::STATUS_PENDING => 'gray',
-                        KycSubmission::STATUS_UNDER_REVIEW => 'info',
-                        KycSubmission::STATUS_VERIFIED => 'warning',
+                        KycSubmission::STATUS_PENDING => 'warning',
                         KycSubmission::STATUS_APPROVED => 'success',
-                        KycSubmission::STATUS_DECLINED => 'danger',
-                        default => 'gray',
-                    }),
-
-                Tables\Columns\TextColumn::make('verification_status')
-                    ->label('Verification')
-                    ->badge()
-                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
-                    ->color(fn (string $state): string => match ($state) {
-                        KycSubmission::VERIFICATION_NOT_VERIFIED => 'gray',
-                        KycSubmission::VERIFICATION_VERIFIED => 'success',
-                        KycSubmission::VERIFICATION_FAILED => 'danger',
+                        KycSubmission::STATUS_DISAPPROVED, KycSubmission::STATUS_DECLINED => 'danger',
                         default => 'gray',
                     }),
 
@@ -101,11 +67,6 @@ class KycSubmissionResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options(KycSubmission::getStatuses())
-                    ->multiple(),
-
-                Tables\Filters\SelectFilter::make('verification_status')
-                    ->label('Verification Status')
-                    ->options(KycSubmission::getVerificationStatuses())
                     ->multiple(),
 
                 Tables\Filters\SelectFilter::make('kyc_form_id')
@@ -142,6 +103,110 @@ class KycSubmissionResource extends Resource
                         return $indicators;
                     }),
             ])
+            ->actions([
+                Action::make('approve')
+                    ->label('Approve')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (KycSubmission $record): bool =>
+                        $record->status !== KycSubmission::STATUS_APPROVED
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading('Approve Submission')
+                    ->modalDescription(fn (KycSubmission $record): string =>
+                        "Are you sure you want to approve submission #{$record->id}? An approval email will be sent to the applicant."
+                    )
+                    ->modalIcon('heroicon-o-check-circle')
+                    ->modalSubmitActionLabel('Yes, Approve')
+                    ->action(function (KycSubmission $record) {
+                        try {
+                            $approveAction = app(\App\Actions\ApproveKycSubmissionAction::class);
+                            $approveAction->execute($record, auth()->id());
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Submission approved')
+                                ->body("Submission #{$record->id} has been approved and email sent to applicant.")
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Approval failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                Action::make('disapprove')
+                    ->label('Disapprove')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn (KycSubmission $record): bool =>
+                        $record->status !== KycSubmission::STATUS_DISAPPROVED &&
+                        $record->status !== KycSubmission::STATUS_DECLINED
+                    )
+                    ->form([
+                        FormFields\Textarea::make('decline_reason')
+                            ->label('Reason for Disapproval')
+                            ->required()
+                            ->rows(4)
+                            ->minLength(10)
+                            ->placeholder('Please provide a detailed reason for disapproving this submission...')
+                            ->helperText('This reason will be sent to the applicant via email.'),
+                    ])
+                    ->modalHeading('Disapprove Submission')
+                    ->modalDescription(fn (KycSubmission $record): string =>
+                        "Please provide a reason for disapproving submission #{$record->id}. The reason will be sent to the applicant."
+                    )
+                    ->modalIcon('heroicon-o-x-circle')
+                    ->modalSubmitActionLabel('Disapprove')
+                    ->action(function (KycSubmission $record, array $data) {
+                        try {
+                            $declineAction = app(\App\Actions\DeclineKycSubmissionAction::class);
+                            $declineAction->execute($record, auth()->id(), $data['decline_reason']);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Submission disapproved')
+                                ->body("Submission #{$record->id} has been disapproved and email sent to applicant.")
+                                ->warning()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Disapproval failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
+
+                Action::make('view')
+                    ->label('View')
+                    ->icon('heroicon-o-eye')
+                    ->color('info')
+                    ->url(fn (KycSubmission $record): string =>
+                        route('filament.dashboard.resources.kyc-submissions.view', ['record' => $record])
+                    ),
+
+                Action::make('delete')
+                    ->label('Delete')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete Submission')
+                    ->modalDescription(fn (KycSubmission $record): string =>
+                        "Are you sure you want to permanently delete submission #{$record->id}? This action cannot be undone."
+                    )
+                    ->action(function (KycSubmission $record) {
+                        $record->delete();
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Submission deleted')
+                            ->body("Submission #{$record->id} has been permanently deleted.")
+                            ->success()
+                            ->send();
+                    }),
+            ])
+            ->recordUrl(fn (KycSubmission $record): string => route('filament.dashboard.resources.kyc-submissions.view', ['record' => $record]))
             ->defaultSort('created_at', 'desc');
     }
 
