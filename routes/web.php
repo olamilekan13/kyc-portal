@@ -3,10 +3,12 @@
 use App\Http\Controllers\Api\LivenessVerificationController;
 use App\Http\Controllers\Api\NinVerificationController;
 use App\Http\Controllers\KycSubmissionController;
+use App\Models\HomePageSetting;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    $settings = HomePageSetting::getActiveSetting();
+    return view('home', compact('settings'));
 });
 
 // API Routes for AJAX requests
