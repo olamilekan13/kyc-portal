@@ -168,7 +168,7 @@
                                         maxlength="20"
                                         class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 @error($field->field_name) border-red-500 @enderror"
                                         :class="{ 'border-red-500 focus:ring-red-500': hasError }"
-                                        placeholder="+1 (555) 123-4567"
+                                        placeholder="+234 803 123 4567"
                                     >
                                     <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                         <svg x-show="isValidPhone && !hasError" class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
