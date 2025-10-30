@@ -16,10 +16,10 @@ class AdminUserSeeder extends Seeder
     {
         // Create or update admin user
         User::updateOrCreate(
-            ['email' => 'admin@kyc.com'],
+            ['email' => 'dmpluspower@digitalmediaplus.info'],
             [
                 'name' => 'Admin User',
-                'password' => Hash::make('password'),
+                'password' => Hash::make('dmplus123#'),
                 'role' => 'super_admin',
                 'email_verified_at' => now(),
             ]

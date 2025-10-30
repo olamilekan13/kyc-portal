@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\KycForm;
 use App\Models\KycFormField;
 use App\Models\KycSubmission;
+use App\Models\SystemSetting;
+use App\Mail\KycSubmissionNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -181,6 +184,26 @@ class KycSubmissionController extends Controller
                 'submission_id' => $submission->id,
                 'ip_address' => $request->ip(),
             ]);
+
+            // Send notification email to admin
+            try {
+                $notificationEmail = SystemSetting::get('kyc_notification_email', config('mail.from.address'));
+
+                if ($notificationEmail) {
+                    Mail::to($notificationEmail)->send(new KycSubmissionNotification($submission));
+
+                    Log::info('KYC submission notification email sent', [
+                        'submission_id' => $submission->id,
+                        'recipient' => $notificationEmail,
+                    ]);
+                }
+            } catch (Exception $e) {
+                // Log error but don't fail the submission
+                Log::error('Failed to send KYC submission notification email', [
+                    'submission_id' => $submission->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             // Redirect to success page
             return redirect()->route('kyc.success', ['submissionId' => $submission->id]);
