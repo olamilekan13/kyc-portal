@@ -26,8 +26,8 @@ class AdminUserSeeder extends Seeder
         );
 
         $this->command->info('Admin user created/updated successfully!');
-        $this->command->info('Email: admin@kyc.com');
-        $this->command->info('Password: password');
+        $this->command->info('Email: dmpluspower@digitalmediaplus.info');
+        $this->command->info('Password: dmplus123#');
         $this->command->info('Role: super_admin');
     }
 }
