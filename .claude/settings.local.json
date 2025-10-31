@@ -19,7 +19,12 @@
       "Bash(git reset:*)",
       "Bash(npm run build:*)",
       "Bash(npm install:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(npx vite build)",
+      "Bash(npm cache clean:*)",
+      "Bash(npm config:*)",
+      "Bash(findstr:*)",
+      "Bash(wmic process where \"name=''''php.exe''''\" get commandline)"
     ],
     "deny": [],
     "ask": []
