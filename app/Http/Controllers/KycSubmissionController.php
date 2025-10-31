@@ -294,7 +294,6 @@ class KycSubmissionController extends Controller
                     // NIN must be 11 digits
                     $fieldRules[] = 'string';
                     $fieldRules[] = 'regex:/^\d{11}$/';
-                    $fieldRules[] = 'size:11';
 
                     // Validate that NIN was verified (check hidden field)
                     if ($field->is_required) {
