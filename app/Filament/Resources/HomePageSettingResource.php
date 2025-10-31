@@ -49,17 +49,27 @@ class HomePageSettingResource extends Resource
                             ->label('Instructions / Content')
                             ->placeholder('Enter detailed instructions for users before they start the KYC process')
                             ->toolbarButtons([
+                                'attachFiles',
+                                'blockquote',
                                 'bold',
-                                'italic',
-                                'underline',
-                                'strike',
                                 'bulletList',
-                                'orderedList',
+                                'codeBlock',
                                 'h2',
                                 'h3',
+                                'italic',
                                 'link',
+                                'orderedList',
+                                'redo',
+                                'strike',
+                                'underline',
+                                'undo',
                             ])
-                            ->columnSpanFull(),
+                            ->fileAttachmentsDisk('public')
+                            ->fileAttachmentsDirectory('home-page-attachments')
+                            ->fileAttachmentsVisibility('public')
+                            ->columnSpanFull()
+                            ->required(false)
+                            ->helperText('Use the rich editor to format your content with headings, lists, links, blockquotes, code blocks, and more. You can also attach files.'),
                     ])
                     ->columns(2),
 
