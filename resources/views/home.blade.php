@@ -37,6 +37,73 @@
         .pulse-slow {
             animation: pulse-slow 4s ease-in-out infinite;
         }
+
+        /* Rich text editor content styling */
+        .prose ol {
+            list-style-type: decimal;
+            margin-left: 1.5em;
+            margin-top: 1em;
+            margin-bottom: 1em;
+            padding-left: 0.5em;
+        }
+        .prose ul {
+            list-style-type: disc;
+            margin-left: 1.5em;
+            margin-top: 1em;
+            margin-bottom: 1em;
+            padding-left: 0.5em;
+        }
+        .prose ol li,
+        .prose ul li {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+            padding-left: 0.375em;
+        }
+        .prose ol ol,
+        .prose ol ul,
+        .prose ul ol,
+        .prose ul ul {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+        }
+        .prose h1 {
+            font-size: 2.25em;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 0.8888889em;
+            line-height: 1.1111111;
+        }
+        .prose h2 {
+            font-size: 1.875em;
+            font-weight: 700;
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            line-height: 1.2;
+        }
+        .prose h3 {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-top: 1.6em;
+            margin-bottom: 0.6em;
+            line-height: 1.3333333;
+        }
+        .prose p {
+            margin-top: 1em;
+            margin-bottom: 1em;
+        }
+        .prose strong {
+            font-weight: 600;
+        }
+        .prose em {
+            font-style: italic;
+        }
+        .prose blockquote {
+            font-style: italic;
+            border-left: 4px solid #e5e7eb;
+            padding-left: 1em;
+            margin: 1.5em 0;
+            color: #6b7280;
+        }
     </style>
 </head>
 <body class="font-sans antialiased bg-gradient-to-br from-blue-50 via-white to-red-50">
@@ -119,29 +186,13 @@
                             {{ $settings->subtitle }}
                         </p>
                     @endif
-
-                    <!-- Call to Action Button -->
-                    <div class="mb-16">
-                        <a href="/kyc" class="group inline-flex items-center px-10 py-5 text-xl font-bold text-white bg-gradient-to-r from-dmp-red to-dmp-blue rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 hover:from-dmp-blue hover:to-dmp-red">
-                            <span>{{ $settings->button_text ?? 'Start KYC Process' }}</span>
-                            <svg class="w-6 h-6 ml-3 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                            </svg>
-                        </a>
-                        <p class="mt-4 text-sm text-gray-500">
-                            <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
-                            </svg>
-                            Secure & Encrypted Process
-                        </p>
-                    </div>
                 </div>
 
                 <!-- Instructions / Content -->
                 @if($settings && $settings->instructions)
                     <div class="max-w-4xl mx-auto">
                         <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100 hover:shadow-3xl transition-shadow duration-300">
-                            <div class="prose prose-lg prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-dmp-blue prose-strong:text-gray-900 prose-ul:text-gray-600 max-w-none">
+                            <div class="prose prose-lg prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-dmp-blue prose-strong:text-gray-900 prose-ul:text-gray-600 prose-ol:text-gray-600 max-w-none">
                                 {!! $settings->instructions !!}
                             </div>
                         </div>
@@ -177,6 +228,22 @@
                                 <h3 class="text-lg font-bold text-gray-900 mb-2">Compliant</h3>
                                 <p class="text-gray-600 text-sm">Fully compliant with regulatory requirements and standards</p>
                             </div>
+                        </div>
+
+                        <!-- Call to Action Button -->
+                        <div class="mt-12 text-center">
+                            <a href="/kyc" class="group inline-flex items-center px-10 py-5 text-xl font-bold text-white bg-gradient-to-r from-dmp-red to-dmp-blue rounded-full shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 hover:from-dmp-blue hover:to-dmp-red">
+                                <span>{{ $settings->button_text ?? 'Start KYC Process' }}</span>
+                                <svg class="w-6 h-6 ml-3 transform group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                </svg>
+                            </a>
+                            <p class="mt-4 text-sm text-gray-500">
+                                <svg class="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Secure & Encrypted Process
+                            </p>
                         </div>
                     </div>
                 @endif
