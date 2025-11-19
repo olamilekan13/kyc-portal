@@ -5,13 +5,14 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\SystemSettingResource\Pages;
 use App\Models\SystemSetting;
 use BackedEnum;
+use Filament\Actions;
+use Filament\Forms;
 use Filament\Forms\Components as FormFields;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use UnitEnum;
 
 class SystemSettingResource extends Resource
 {
@@ -19,15 +20,9 @@ class SystemSettingResource extends Resource
 
     protected static BackedEnum | string | null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
+    protected static ?int $navigationSort = 6;
+
     protected static ?string $navigationLabel = 'System Settings';
-
-    protected static ?string $modelLabel = 'System Setting';
-
-    protected static ?string $pluralModelLabel = 'System Settings';
-
-    protected static ?int $navigationSort = 99;
-
-    protected static UnitEnum | string | null $navigationGroup = 'Settings';
 
     public static function form(Schema $schema): Schema
     {
@@ -39,34 +34,59 @@ class SystemSettingResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->label('Setting Key')
-                            ->placeholder('e.g., kyc_notification_email')
+                            ->unique(ignoreRecord: true)
                             ->disabled(fn ($record) => $record !== null)
-                            ->helperText('Unique identifier for this setting. Cannot be changed after creation.'),
+                            ->helperText('Unique identifier for this setting'),
+
+                        FormFields\Select::make('group')
+                            ->required()
+                            ->options([
+                                'general' => 'General',
+                                'payments' => 'Payments',
+                                'notifications' => 'Notifications',
+                                'onboarding' => 'Onboarding',
+                            ])
+                            ->default('general')
+                            ->label('Group'),
 
                         FormFields\Select::make('type')
                             ->required()
                             ->options([
-                                'string' => 'Text',
-                                'boolean' => 'True/False',
-                                'integer' => 'Number',
+                                'text' => 'Text',
+                                'number' => 'Number',
+                                'textarea' => 'Textarea',
                                 'json' => 'JSON',
                             ])
-                            ->default('string')
-                            ->label('Value Type')
+                            ->default('text')
                             ->reactive()
-                            ->helperText('Select the type of value this setting stores.'),
+                            ->label('Type'),
+
+                        FormFields\Textarea::make('description')
+                            ->maxLength(65535)
+                            ->rows(2)
+                            ->label('Description')
+                            ->columnSpanFull(),
+
+                        FormFields\TextInput::make('value')
+                            ->required()
+                            ->label('Value')
+                            ->visible(fn ($get) => in_array($get('type'), ['text', 'number']))
+                            ->numeric(fn ($get) => $get('type') === 'number')
+                            ->columnSpanFull(),
 
                         FormFields\Textarea::make('value')
                             ->required()
-                            ->rows(3)
                             ->label('Value')
-                            ->placeholder('Enter the setting value')
+                            ->visible(fn ($get) => $get('type') === 'textarea')
+                            ->rows(4)
                             ->columnSpanFull(),
 
-                        FormFields\Textarea::make('description')
-                            ->rows(2)
-                            ->label('Description')
-                            ->placeholder('Describe what this setting controls')
+                        FormFields\Textarea::make('value')
+                            ->required()
+                            ->label('Value (JSON)')
+                            ->visible(fn ($get) => $get('type') === 'json')
+                            ->rows(6)
+                            ->helperText('Enter valid JSON')
                             ->columnSpanFull(),
                     ])
                     ->columns(2),
@@ -80,48 +100,63 @@ class SystemSettingResource extends Resource
                 Tables\Columns\TextColumn::make('key')
                     ->searchable()
                     ->sortable()
-                    ->label('Setting Key')
-                    ->weight('medium')
-                    ->copyable(),
+                    ->weight('bold'),
 
-                Tables\Columns\TextColumn::make('value')
-                    ->label('Value')
-                    ->limit(50)
-                    ->wrap()
-                    ->copyable(),
+                Tables\Columns\TextColumn::make('group')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'payments' => 'success',
+                        'notifications' => 'warning',
+                        'onboarding' => 'info',
+                        default => 'gray',
+                    })
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('type')
-                    ->label('Type')
                     ->badge()
-                    ->colors([
-                        'primary' => 'string',
-                        'success' => 'boolean',
-                        'warning' => 'integer',
-                        'info' => 'json',
-                    ]),
+                    ->sortable(),
 
-                Tables\Columns\TextColumn::make('description')
-                    ->label('Description')
-                    ->limit(40)
+                Tables\Columns\TextColumn::make('value')
+                    ->limit(50)
+                    ->searchable()
                     ->wrap(),
 
+                Tables\Columns\TextColumn::make('description')
+                    ->limit(50)
+                    ->toggleable(isToggledHiddenByDefault: false),
+
                 Tables\Columns\TextColumn::make('updated_at')
-                    ->label('Last Updated')
-                    ->dateTime('M d, Y H:i')
-                    ->sortable(),
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('group', 'asc')
             ->filters([
-                Tables\Filters\SelectFilter::make('type')
-                    ->label('Type')
+                Tables\Filters\SelectFilter::make('group')
                     ->options([
-                        'string' => 'Text',
-                        'boolean' => 'True/False',
-                        'integer' => 'Number',
+                        'general' => 'General',
+                        'payments' => 'Payments',
+                        'notifications' => 'Notifications',
+                        'onboarding' => 'Onboarding',
+                    ]),
+
+                Tables\Filters\SelectFilter::make('type')
+                    ->options([
+                        'text' => 'Text',
+                        'number' => 'Number',
+                        'textarea' => 'Textarea',
                         'json' => 'JSON',
-                    ])
-                    ->placeholder('All Types'),
+                    ]),
             ])
-            ->defaultSort('key', 'asc');
+            ->actions([
+                Actions\EditAction::make(),
+                Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
     }
 
     public static function getRelations(): array

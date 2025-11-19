@@ -58,6 +58,9 @@ class KycSubmission extends Model
         'reviewed_by',
         'reviewed_at',
         'decline_reason',
+        'onboarding_token',
+        'onboarding_status',
+        'onboarding_completed_at',
     ];
 
     /**
@@ -69,6 +72,7 @@ class KycSubmission extends Model
         'submission_data' => 'array',
         'verification_response' => 'array',
         'reviewed_at' => 'datetime',
+        'onboarding_completed_at' => 'datetime',
     ];
 
     /**
@@ -109,6 +113,40 @@ class KycSubmission extends Model
     public function notifications(): HasMany
     {
         return $this->hasMany(KycNotification::class);
+    }
+
+    /**
+     * Get the final onboarding data for this submission.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function finalOnboarding()
+    {
+        return $this->hasOne(FinalOnboarding::class);
+    }
+
+    /**
+     * Generate a unique onboarding token.
+     *
+     * @return string
+     */
+    public static function generateOnboardingToken(): string
+    {
+        do {
+            $token = 'ONB-' . strtoupper(bin2hex(random_bytes(8)));
+        } while (self::where('onboarding_token', $token)->exists());
+
+        return $token;
+    }
+
+    /**
+     * Check if onboarding is completed.
+     *
+     * @return bool
+     */
+    public function isOnboardingCompleted(): bool
+    {
+        return $this->onboarding_status === 'completed';
     }
 
     /**

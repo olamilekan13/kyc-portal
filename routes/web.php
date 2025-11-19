@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\LivenessVerificationController;
 use App\Http\Controllers\Api\NinVerificationController;
 use App\Http\Controllers\KycSubmissionController;
+use App\Http\Controllers\FinalOnboardingController;
 use App\Models\HomePageSetting;
 use Illuminate\Support\Facades\Route;
 
@@ -13,11 +14,11 @@ Route::get('/', function () {
 
 // API Routes for AJAX requests
 Route::prefix('api')->name('api.')->group(function () {
-    // NIN Verification endpoint (rate limited: 5 per minute)
+    // NIN Verification endpoint
     Route::post('/nin/verify', [NinVerificationController::class, 'verify'])
         ->name('nin.verify');
 
-    // Liveness Selfie Verification endpoint (rate limited: 3 per minute)
+    // Liveness Selfie Verification endpoint
     Route::post('/liveness/verify', [LivenessVerificationController::class, 'verify'])
         ->name('liveness.verify');
 });
@@ -37,8 +38,38 @@ Route::prefix('kyc')->name('kyc.')->group(function () {
     Route::get('/{form}', [KycSubmissionController::class, 'show'])
         ->name('show');
 
-    // Submit KYC form with rate limiting (10 submissions per hour per IP)
+    // Submit KYC form
     Route::post('/{form}/submit', [KycSubmissionController::class, 'submit'])
-        ->middleware('throttle:10,60')
         ->name('submit');
+});
+
+// Final Onboarding Routes
+Route::prefix('onboarding')->name('onboarding.')->group(function () {
+    // Show onboarding form (partnership selection)
+    Route::get('/{token}', [FinalOnboardingController::class, 'show'])
+        ->name('show');
+
+    // Submit partnership model selection
+    Route::post('/{token}/submit', [FinalOnboardingController::class, 'submitSelection'])
+        ->name('submit');
+
+    // Payment page
+    Route::get('/{token}/payment', [FinalOnboardingController::class, 'payment'])
+        ->name('payment');
+
+    // Process bank transfer payment
+    Route::post('/{token}/payment/bank-transfer', [FinalOnboardingController::class, 'processBankTransfer'])
+        ->name('bank-transfer');
+
+    // Paystack payment callback
+    Route::get('/{token}/payment/paystack/callback', [FinalOnboardingController::class, 'paystackCallback'])
+        ->name('paystack-callback');
+
+    // Payment confirmation page
+    Route::get('/{token}/confirmation', [FinalOnboardingController::class, 'confirmation'])
+        ->name('confirmation');
+
+    // Download payment receipt
+    Route::get('/{token}/receipt', [FinalOnboardingController::class, 'downloadReceipt'])
+        ->name('receipt');
 });

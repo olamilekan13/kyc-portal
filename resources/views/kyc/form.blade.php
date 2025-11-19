@@ -688,15 +688,62 @@ function fieldData{{ $index }}() {
             const canvas = this.$refs.canvas;
             const context = canvas.getContext('2d');
 
-            // Set canvas dimensions to match video
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            // Calculate dimensions to fit within 640x640 while maintaining aspect ratio
+            // YouVerify requires: 48x48 to 4096x4096 pixels, ≤1MB
+            // Smaller dimensions = smaller file size
+            const MAX_WIDTH = 640;
+            const MAX_HEIGHT = 640;
+            let width = video.videoWidth;
+            let height = video.videoHeight;
 
-            // Draw video frame to canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Calculate scaling factor
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height = Math.round((height * MAX_WIDTH) / width);
+                    width = MAX_WIDTH;
+                }
+            } else {
+                if (height > MAX_HEIGHT) {
+                    width = Math.round((width * MAX_HEIGHT) / height);
+                    height = MAX_HEIGHT;
+                }
+            }
 
-            // Convert to base64
-            this.selfieCapture = canvas.toDataURL('image/jpeg', 0.8);
+            // Ensure minimum dimensions (YouVerify requires at least 48x48)
+            if (width < 48) width = 48;
+            if (height < 48) height = 48;
+
+            // Set canvas to resized dimensions
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw video frame to canvas with resizing
+            context.drawImage(video, 0, 0, width, height);
+
+            // Convert to base64 with moderate quality
+            // Start with quality 0.75 to balance quality and file size
+            let quality = 0.75;
+            let imageData = canvas.toDataURL('image/jpeg', quality);
+
+            // Calculate approximate binary size (base64 is ~33% larger)
+            let estimatedBinarySize = (imageData.length * 0.75) / 1024; // in KB
+
+            // If image is too large (>800KB binary ≈ 1066KB base64), reduce quality
+            // Target max 700KB binary to be safe
+            while (estimatedBinarySize > 700 && quality > 0.5) {
+                quality -= 0.05;
+                imageData = canvas.toDataURL('image/jpeg', quality);
+                estimatedBinarySize = (imageData.length * 0.75) / 1024;
+            }
+
+            this.selfieCapture = imageData;
+
+            // Image stats validation
+            const meetsRequirements = {
+                minDimensions: width >= 48 && height >= 48,
+                maxDimensions: width <= 4096 && height <= 4096,
+                maxSize: estimatedBinarySize <= 1024
+            };
 
             // Stop camera
             this.stopCamera();
@@ -739,6 +786,15 @@ function fieldData{{ $index }}() {
             this.verifyingLiveness = true;
             this.livenessError = '';
 
+            // Validate image format before sending
+            if (!this.selfieCapture.startsWith('data:image/')) {
+                this.livenessError = 'Invalid image format. Please retake the selfie.';
+                this.verifyingLiveness = false;
+                console.error('Invalid selfie format - missing data URI prefix');
+                return;
+            }
+
+
             try {
                 const response = await fetch('{{ route('api.liveness.verify') }}', {
                     method: 'POST',
@@ -761,16 +817,22 @@ function fieldData{{ $index }}() {
                     this.livenessError = '';
                     this.faceMatchScore = result.data?.face_match_score || null;
                     this.livenessVerificationData = JSON.stringify(result.data);
-
-                    console.log('Liveness verified successfully:', result.data);
                 } else {
                     // Verification failed
                     this.livenessVerified = false;
                     this.livenessError = result.message || 'Liveness verification failed. Please try again.';
 
+                    // Enhanced error logging
+                    console.error('✗ Liveness Verification Failed:', {
+                        error: result.error,
+                        message: result.message,
+                        responseData: result.data,
+                        debug: result.debug
+                    });
+
                     // Log debug info if available
                     if (result.debug) {
-                        console.error('Liveness Verification Debug Info:', result.debug);
+                        console.error('Debug Info:', result.debug);
                     }
                 }
             } catch (error) {
@@ -848,9 +910,6 @@ function fieldData{{ $index }}() {
 
                     // Auto-populate form fields
                     this.autoPopulateFields(result.data);
-
-                    // Show success message
-                    console.log('NIN verified successfully:', result.data);
                 } else {
                     // Verification failed
                     this.ninVerified = false;

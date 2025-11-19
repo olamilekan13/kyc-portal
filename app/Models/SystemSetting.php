@@ -2,75 +2,85 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 class SystemSetting extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'key',
         'value',
         'type',
+        'group',
         'description',
     ];
 
     /**
      * Get a setting value by key
-     *
-     * @param string $key
-     * @param mixed $default
-     * @return mixed
      */
     public static function get(string $key, $default = null)
     {
-        return Cache::remember("system_setting_{$key}", 3600, function () use ($key, $default) {
+        return Cache::remember("setting_{$key}", 3600, function () use ($key, $default) {
             $setting = self::where('key', $key)->first();
-
-            if (!$setting) {
-                return $default;
-            }
-
-            return self::castValue($setting->value, $setting->type);
+            return $setting ? $setting->value : $default;
         });
     }
 
     /**
-     * Set a setting value
-     *
-     * @param string $key
-     * @param mixed $value
-     * @param string $type
-     * @param string|null $description
-     * @return void
+     * Set a setting value by key
      */
-    public static function set(string $key, $value, string $type = 'string', ?string $description = null): void
+    public static function set(string $key, $value, string $type = 'text', string $group = 'general', ?string $description = null): self
     {
         $setting = self::updateOrCreate(
             ['key' => $key],
             [
                 'value' => $value,
                 'type' => $type,
+                'group' => $group,
                 'description' => $description,
             ]
         );
 
-        Cache::forget("system_setting_{$key}");
+        Cache::forget("setting_{$key}");
+
+        return $setting;
     }
 
     /**
-     * Cast value to appropriate type
-     *
-     * @param string $value
-     * @param string $type
-     * @return mixed
+     * Get all settings in a group
      */
-    protected static function castValue($value, string $type)
+    public static function getGroup(string $group): array
     {
-        return match ($type) {
-            'boolean' => filter_var($value, FILTER_VALIDATE_BOOLEAN),
-            'integer' => (int) $value,
-            'json' => json_decode($value, true),
-            default => $value,
-        };
+        return self::where('group', $group)->pluck('value', 'key')->toArray();
+    }
+
+    /**
+     * Clear settings cache
+     */
+    public static function clearCache(): void
+    {
+        $settings = self::all();
+        foreach ($settings as $setting) {
+            Cache::forget("setting_{$setting->key}");
+        }
+    }
+
+    /**
+     * Boot method to clear cache on update
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saved(function ($setting) {
+            Cache::forget("setting_{$setting->key}");
+        });
+
+        static::deleted(function ($setting) {
+            Cache::forget("setting_{$setting->key}");
+        });
     }
 }

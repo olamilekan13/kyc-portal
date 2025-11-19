@@ -25,7 +25,7 @@ class KycSubmissionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'KYC Submissions';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {
@@ -57,6 +57,37 @@ class KycSubmissionResource extends Resource
                         KycSubmission::STATUS_DISAPPROVED, KycSubmission::STATUS_DECLINED => 'danger',
                         default => 'gray',
                     }),
+
+                Tables\Columns\TextColumn::make('onboarding_status')
+                    ->label('Onboarding')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => ucwords(str_replace('_', ' ', $state)))
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'gray',
+                        'in_progress' => 'warning',
+                        'completed' => 'success',
+                        default => 'gray',
+                    })
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('finalOnboarding.partnership_model_name')
+                    ->label('Partnership Model')
+                    ->searchable()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false),
+
+                Tables\Columns\TextColumn::make('finalOnboarding.payment_status')
+                    ->label('Payment Status')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => $state ? ucwords($state) : 'N/A')
+                    ->color(fn (?string $state): string => match ($state) {
+                        'completed' => 'success',
+                        'partial' => 'warning',
+                        'pending' => 'gray',
+                        'failed' => 'danger',
+                        default => 'gray',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Submitted At')

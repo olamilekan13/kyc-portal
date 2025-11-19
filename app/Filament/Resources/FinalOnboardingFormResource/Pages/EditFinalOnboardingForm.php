@@ -1,18 +1,19 @@
 <?php
 
-namespace App\Filament\Resources\SystemSettingResource\Pages;
+namespace App\Filament\Resources\FinalOnboardingFormResource\Pages;
 
-use App\Filament\Resources\SystemSettingResource;
+use App\Filament\Resources\FinalOnboardingFormResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditSystemSetting extends EditRecord
+class EditFinalOnboardingForm extends EditRecord
 {
-    protected static string $resource = SystemSettingResource::class;
+    protected static string $resource = FinalOnboardingFormResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
+            Actions\ViewAction::make(),
             Actions\DeleteAction::make(),
         ];
     }

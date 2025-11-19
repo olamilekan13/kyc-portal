@@ -273,6 +273,22 @@ class YouVerifyService
                 ];
             }
 
+            // Strip data URI prefix if present - YouVerify expects raw base64
+            $cleanBase64 = preg_replace('/^data:image\/\w+;base64,/', '', $selfieBase64);
+
+            // Additional validation and logging
+            $imageSize = strlen($cleanBase64);
+            $decodedImage = base64_decode($cleanBase64);
+            $imageInfo = @getimagesizefromstring($decodedImage);
+
+            Log::info('YouVerify NIN verification with selfie initiated', [
+                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
+                'image_base64_length' => $imageSize,
+                'image_decoded_size' => $decodedImage ? strlen($decodedImage) : 0,
+                'image_dimensions' => $imageInfo ? "{$imageInfo[0]}x{$imageInfo[1]}" : 'unknown',
+                'image_mime' => $imageInfo[' mime'] ?? 'unknown',
+            ]);
+
             // Build API payload with selfie validation
             // Per YouVerify docs: include validations.selfie for face matching
             $payload = [
@@ -280,14 +296,10 @@ class YouVerifyService
                 'isSubjectConsent' => true,
                 'validations' => [
                     'selfie' => [
-                        'image' => $selfieBase64,
+                        'image' => $cleanBase64,
                     ],
                 ],
             ];
-
-            Log::info('YouVerify NIN verification with selfie initiated', [
-                'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
-            ]);
 
             // Make API request
             $response = Http::withHeaders([
@@ -347,7 +359,10 @@ class YouVerifyService
 
             // Handle specific error codes
             $errorMessage = 'Verification failed. Please try again.';
-            if ($statusCode === 404) {
+            if ($statusCode === 400) {
+                // Extract specific validation error message from response
+                $errorMessage = $responseData['message'] ?? 'Invalid request. Please check image format and size.';
+            } elseif ($statusCode === 404) {
                 $errorMessage = 'NIN not found. Please use test NIN 11111111111 in sandbox.';
             } elseif ($statusCode === 401 || $statusCode === 403) {
                 $errorMessage = 'API authentication failed.';
@@ -357,6 +372,11 @@ class YouVerifyService
                 'nin' => substr($nin, 0, 3) . '****' . substr($nin, -2),
                 'status_code' => $statusCode,
                 'response' => $responseData,
+                'image_stats' => [
+                    'base64_length' => $imageSize ?? null,
+                    'decoded_size_bytes' => isset($decodedImage) ? strlen($decodedImage) : null,
+                    'dimensions' => isset($imageInfo) && $imageInfo ? "{$imageInfo[0]}x{$imageInfo[1]}" : 'unknown',
+                ],
             ]);
 
             return [

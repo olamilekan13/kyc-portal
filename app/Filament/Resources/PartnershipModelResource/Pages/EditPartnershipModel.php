@@ -1,14 +1,14 @@
 <?php
 
-namespace App\Filament\Resources\SystemSettingResource\Pages;
+namespace App\Filament\Resources\PartnershipModelResource\Pages;
 
-use App\Filament\Resources\SystemSettingResource;
+use App\Filament\Resources\PartnershipModelResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
-class EditSystemSetting extends EditRecord
+class EditPartnershipModel extends EditRecord
 {
-    protected static string $resource = SystemSettingResource::class;
+    protected static string $resource = PartnershipModelResource::class;
 
     protected function getHeaderActions(): array
     {

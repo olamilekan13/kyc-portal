@@ -172,16 +172,19 @@ class KycSubmissionController extends Controller
             // Handle file uploads
             $submissionData = $this->handleFileUploads($request, $form->fields, $validatedData);
 
-            // Create KYC submission
+            // Create KYC submission with onboarding token
             $submission = $form->submissions()->create([
                 'submission_data' => $submissionData,
                 'status' => KycSubmission::STATUS_PENDING,
                 'verification_status' => KycSubmission::VERIFICATION_NOT_VERIFIED,
+                'onboarding_token' => KycSubmission::generateOnboardingToken(),
+                'onboarding_status' => 'pending',
             ]);
 
             Log::info('KYC submission created successfully', [
                 'form_id' => $form->id,
                 'submission_id' => $submission->id,
+                'onboarding_token' => $submission->onboarding_token,
                 'ip_address' => $request->ip(),
             ]);
 
@@ -205,8 +208,8 @@ class KycSubmissionController extends Controller
                 ]);
             }
 
-            // Redirect to success page
-            return redirect()->route('kyc.success', ['submissionId' => $submission->id]);
+            // Redirect to final onboarding page with token
+            return redirect()->route('onboarding.show', ['token' => $submission->onboarding_token]);
         } catch (ValidationException $e) {
             return back()
                 ->withErrors($e->errors())

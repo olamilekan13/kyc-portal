@@ -7,7 +7,6 @@ use App\Services\YouVerifyService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\RateLimiter;
 use Exception;
 
 /**
@@ -47,24 +46,6 @@ class LivenessVerificationController extends Controller
     public function verify(Request $request): JsonResponse
     {
         try {
-            // Rate limiting: 3 attempts per minute per IP (more strict due to processing cost)
-            $key = 'liveness-verify:' . $request->ip();
-
-            if (RateLimiter::tooManyAttempts($key, 3)) {
-                $seconds = RateLimiter::availableIn($key);
-
-                Log::warning('Liveness verification rate limit exceeded', [
-                    'ip' => $request->ip(),
-                    'available_in' => $seconds,
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'verified' => false,
-                    'message' => 'Too many verification attempts. Please try again in ' . ceil($seconds / 60) . ' minute(s).',
-                ], 429);
-            }
-
             // Validate request - now requires NIN for proper verification
             $validated = $request->validate([
                 'selfie' => [
@@ -81,8 +62,6 @@ class LivenessVerificationController extends Controller
                 'nin.required' => 'NIN is required for liveness verification',
                 'nin.regex' => 'NIN must be exactly 11 digits',
             ]);
-
-            RateLimiter::hit($key, 60); // Increment rate limiter
 
             Log::info('Liveness verification request received', [
                 'nin' => substr($validated['nin'], 0, 3) . '****' . substr($validated['nin'], -2),

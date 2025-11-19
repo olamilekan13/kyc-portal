@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\KycFormResource\Pages;
-use App\Models\KycForm;
-use App\Models\KycFormField;
+use App\Filament\Resources\FinalOnboardingFormResource\Pages;
+use App\Models\FinalOnboardingForm;
+use App\Models\FinalOnboardingFormField;
 use BackedEnum;
 use Filament\Forms\Components as FormFields;
 use Filament\Resources\Resource;
@@ -16,19 +16,19 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Str;
 
-class KycFormResource extends Resource
+class FinalOnboardingFormResource extends Resource
 {
-    protected static ?string $model = KycForm::class;
+    protected static ?string $model = FinalOnboardingForm::class;
 
-    protected static BackedEnum | string | null $navigationIcon = 'heroicon-o-document-text';
+    protected static BackedEnum | string | null $navigationIcon = 'heroicon-o-clipboard-document-list';
 
-    protected static ?string $navigationLabel = 'KYC Forms';
+    protected static ?string $navigationLabel = 'Final Onboarding Forms';
 
-    protected static ?string $modelLabel = 'KYC Form';
+    protected static ?string $modelLabel = 'Final Onboarding Form';
 
-    protected static ?string $pluralModelLabel = 'KYC Forms';
+    protected static ?string $pluralModelLabel = 'Final Onboarding Forms';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {
@@ -45,27 +45,13 @@ class KycFormResource extends Resource
                             ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                 // Auto-generate slug from form name if slug is empty
                                 if ($state && !$get('slug')) {
-                                    $set('slug', KycForm::generateSlug($state));
+                                    $set('slug', FinalOnboardingForm::generateSlug($state));
                                 }
                             }),
 
-                        // FormFields\TextInput::make('slug')
-                        //     ->required()
-                        //     ->maxLength(255)
-                        //     ->unique(KycForm::class, 'slug', ignoreRecord: true)
-                        //     ->label('URL Slug')
-                        //     ->placeholder('e.g., company-onboarding')
-                        //     ->helperText('This will be used in the form URL: /kyc/your-slug')
-                        //     ->regex('/^[a-z0-9-]+$/')
-                        //     ->rules(['regex:/^[a-z0-9-]+$/'])
-                        //     ->validationMessages([
-                        //         'regex' => 'The slug can only contain lowercase letters, numbers, and hyphens.',
-                        //     ])
-                        //     ->suffixIcon('heroicon-o-link'),
-
                         FormFields\Hidden::make('slug')
-                            ->default(fn (Get $get) => $get('name') ? KycForm::generateSlug($get('name')) : null)
-                            ->dehydrateStateUsing(fn ($state, Get $get) => $state ?: KycForm::generateSlug($get('name'))),
+                            ->default(fn (Get $get) => $get('name') ? FinalOnboardingForm::generateSlug($get('name')) : null)
+                            ->dehydrateStateUsing(fn ($state, Get $get) => $state ?: FinalOnboardingForm::generateSlug($get('name'))),
 
                         FormFields\Textarea::make('description')
                             ->rows(3)
@@ -83,7 +69,7 @@ class KycFormResource extends Resource
                             ->label('Set as Default Form')
                             ->default(false)
                             ->inline(false)
-                            ->helperText('⭐ The default form will be shown when users visit /kyc directly. Only ONE form can be default at a time.'),
+                            ->helperText('⭐ The default form will be shown for final onboarding. Only ONE form can be default at a time.'),
 
                         FormFields\Hidden::make('created_by')
                             ->default(auth()->id()),
@@ -96,36 +82,26 @@ class KycFormResource extends Resource
                             ->relationship('fields')
                             ->schema([
                                 FormFields\Select::make('field_type')
-                                    ->options(KycFormField::FIELD_TYPES)
+                                    ->options(array_combine(
+                                        FinalOnboardingFormField::FIELD_TYPES,
+                                        array_map('ucfirst', FinalOnboardingFormField::FIELD_TYPES)
+                                    ))
                                     ->required()
                                     ->searchable()
                                     ->label('Field Type')
                                     ->live()
                                     ->afterStateUpdated(function ($state, Set $set, Get $get) {
-                                        // Auto-set field_name for special field types
-                                        if ($state === 'nin') {
-                                            $set('field_name', 'nin_number');
-                                            if (!$get('field_label')) {
-                                                $set('field_label', 'National Identity Number (NIN)');
-                                            }
-                                        } elseif ($state === 'liveness_selfie') {
-                                            $set('field_name', 'liveness_selfie');
-                                            if (!$get('field_label')) {
-                                                $set('field_label', 'Take a Selfie');
-                                            }
-                                        } else {
-                                            // Auto-generate field_name from field_label for regular fields
-                                            $fieldLabel = $get('field_label');
-                                            if ($fieldLabel && !$get('field_name')) {
-                                                $set('field_name', Str::slug($fieldLabel, '_'));
-                                            }
+                                        // Auto-generate field_name from field_label for regular fields
+                                        $fieldLabel = $get('field_label');
+                                        if ($fieldLabel && !$get('field_name')) {
+                                            $set('field_name', Str::slug($fieldLabel, '_'));
                                         }
                                     }),
 
                                 FormFields\TextInput::make('field_label')
                                     ->required()
                                     ->label('Display Label')
-                                    ->placeholder('e.g., First Name')
+                                    ->placeholder('e.g., Business Name')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, Set $set, Get $get) {
                                         // Auto-generate field_name from field_label
@@ -137,8 +113,8 @@ class KycFormResource extends Resource
                                 FormFields\TextInput::make('field_name')
                                     ->required()
                                     ->label('Field Name/ID')
-                                    ->placeholder('e.g., first_name')
-                                    ->helperText('Use lowercase, no spaces (e.g., first_name)')
+                                    ->placeholder('e.g., business_name')
+                                    ->helperText('Use lowercase, no spaces (e.g., business_name)')
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, Set $set) {
                                         // Clean the field name: lowercase, no spaces, alphanumeric + underscores only
@@ -182,7 +158,7 @@ class KycFormResource extends Resource
                             ->columnSpanFull()
                             ->columns(2),
                     ])
-                    ->description('Define the fields that will appear in this KYC form')
+                    ->description('Define the fields that will appear in the final onboarding form (before partnership selection)')
                     ->collapsible()
                     ->persistCollapsed(),
             ]);
@@ -198,16 +174,6 @@ class KycFormResource extends Resource
                     ->label('Form Name')
                     ->weight('medium'),
 
-                // Tables\Columns\TextColumn::make('slug')
-                //     ->searchable()
-                //     ->sortable()
-                //     ->label('URL Slug')
-                //     ->copyable()
-                //     ->copyMessage('Slug copied!')
-                //     ->icon('heroicon-o-link')
-                //     ->description(fn (KycForm $record): string => url('/kyc/' . $record->slug))
-                //     ->tooltip('Click to copy slug'),
-
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->label('Status')
@@ -220,8 +186,8 @@ class KycFormResource extends Resource
                     ->trueIcon('heroicon-o-star')
                     ->falseIcon('')
                     ->trueColor('warning')
-                    ->tooltip(fn (KycForm $record): ?string =>
-                        $record->is_default ? 'This is the default form (shown at /kyc)' : null
+                    ->tooltip(fn (FinalOnboardingForm $record): ?string =>
+                        $record->is_default ? 'This is the default final onboarding form' : null
                     ),
 
                 Tables\Columns\TextColumn::make('creator.name')
@@ -256,10 +222,10 @@ class KycFormResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListKycForms::route('/'),
-            'create' => Pages\CreateKycForm::route('/create'),
-            'view' => Pages\ViewKycForm::route('/{record}'),
-            'edit' => Pages\EditKycForm::route('/{record}/edit'),
+            'index' => Pages\ListFinalOnboardingForms::route('/'),
+            'create' => Pages\CreateFinalOnboardingForm::route('/create'),
+            'view' => Pages\ViewFinalOnboardingForm::route('/{record}'),
+            'edit' => Pages\EditFinalOnboardingForm::route('/{record}/edit'),
         ];
     }
 }

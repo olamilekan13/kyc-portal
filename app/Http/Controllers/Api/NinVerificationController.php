@@ -7,7 +7,6 @@ use App\Services\YouVerifyService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\RateLimiter;
 use Exception;
 
 /**
@@ -48,24 +47,6 @@ class NinVerificationController extends Controller
     public function verify(Request $request): JsonResponse
     {
         try {
-            // Rate limiting: 5 attempts per minute per IP
-            $key = 'nin-verify:' . $request->ip();
-
-            if (RateLimiter::tooManyAttempts($key, 5)) {
-                $seconds = RateLimiter::availableIn($key);
-
-                Log::warning('NIN verification rate limit exceeded', [
-                    'ip' => $request->ip(),
-                    'available_in' => $seconds,
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'verified' => false,
-                    'message' => 'Too many verification attempts. Please try again in ' . ceil($seconds / 60) . ' minute(s).',
-                ], 429);
-            }
-
             // Validate request
             $validated = $request->validate([
                 'nin' => [
@@ -77,8 +58,6 @@ class NinVerificationController extends Controller
                 'nin.required' => 'NIN is required',
                 'nin.regex' => 'NIN must be exactly 11 digits',
             ]);
-
-            RateLimiter::hit($key, 60); // Increment rate limiter
 
             Log::info('NIN verification request received', [
                 'nin' => substr($validated['nin'], 0, 3) . '****' . substr($validated['nin'], -2),

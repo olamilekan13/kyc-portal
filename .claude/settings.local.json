@@ -24,7 +24,13 @@
       "Bash(npm cache clean:*)",
       "Bash(npm config:*)",
       "Bash(findstr:*)",
-      "Bash(wmic process where \"name=''''php.exe''''\" get commandline)"
+      "Bash(wmic process where \"name=''''php.exe''''\" get commandline)",
+      "Bash(dir:*)",
+      "Bash(nul)",
+      "Bash(grep:*)",
+      "Bash(php test_signup_fee.php:*)",
+      "Bash(php fix_signup_fee_key.php:*)",
+      "Bash(php export_settings.php:*)"
     ],
     "deny": [],
     "ask": []

@@ -145,7 +145,145 @@
             </div>
         </div>
 
-        {{-- Section 3: Review Information --}}
+        {{-- Section 3: Final Onboarding Information --}}
+        @if($record->finalOnboarding)
+            <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
+                <div class="fi-section-header flex items-center gap-x-3 overflow-hidden px-6 py-4">
+                    <div class="grid flex-1 gap-y-1">
+                        <h3 class="fi-section-header-heading text-base font-semibold leading-6 text-gray-950 dark:text-white">
+                            Final Onboarding Information
+                        </h3>
+                    </div>
+                </div>
+                <div class="fi-section-content-ctn border-t border-gray-200 dark:border-white/10">
+                    <div class="fi-section-content p-6">
+                        {{-- Onboarding Status & Partnership --}}
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Onboarding Token</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono font-bold">{{ $record->onboarding_token }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Onboarding Status</dt>
+                                <dd class="mt-1">
+                                    <span class="fi-badge fi-badge-{{ match($record->onboarding_status) {
+                                        'pending' => 'gray',
+                                        'in_progress' => 'warning',
+                                        'completed' => 'success',
+                                        default => 'gray'
+                                    } }} inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">
+                                        {{ ucwords(str_replace('_', ' ', $record->onboarding_status)) }}
+                                    </span>
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Partnership Model</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $record->finalOnboarding->partnership_model_name }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Partnership Fee</dt>
+                                <dd class="mt-1 text-sm text-gray-900 dark:text-white">₦{{ number_format($record->finalOnboarding->partnership_model_price, 2) }}</dd>
+                            </div>
+                        </div>
+
+                        {{-- Payment Information --}}
+                        <div class="mb-6">
+                            <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Payment Information</h4>
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Payment Method</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ ucfirst(str_replace('_', ' ', $record->finalOnboarding->payment_method)) }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Payment Status</dt>
+                                    <dd class="mt-1">
+                                        <span class="fi-badge fi-badge-{{ match($record->finalOnboarding->payment_status) {
+                                            'completed' => 'success',
+                                            'partial' => 'warning',
+                                            'pending' => 'gray',
+                                            'failed' => 'danger',
+                                            default => 'gray'
+                                        } }} inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">
+                                            {{ ucwords($record->finalOnboarding->payment_status) }}
+                                        </span>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Signup Fee</dt>
+                                    <dd class="mt-1">
+                                        <span class="text-sm text-gray-900 dark:text-white">₦{{ number_format($record->finalOnboarding->signup_fee_amount, 2) }}</span>
+                                        <span class="ml-2 fi-badge fi-badge-{{ $record->finalOnboarding->signup_fee_paid ? 'success' : 'gray' }} inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">
+                                            {{ $record->finalOnboarding->signup_fee_paid ? 'PAID' : 'PENDING' }}
+                                        </span>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Model Fee</dt>
+                                    <dd class="mt-1">
+                                        <span class="text-sm text-gray-900 dark:text-white">₦{{ number_format($record->finalOnboarding->partnership_model_price, 2) }}</span>
+                                        <span class="ml-2 fi-badge fi-badge-{{ $record->finalOnboarding->model_fee_paid ? 'success' : 'gray' }} inline-flex items-center gap-x-1.5 rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset">
+                                            {{ $record->finalOnboarding->model_fee_paid ? 'PAID' : 'PENDING' }}
+                                        </span>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Total Amount</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white font-bold">₦{{ number_format($record->finalOnboarding->total_amount, 2) }}</dd>
+                                </div>
+                                @if($record->finalOnboarding->signup_fee_reference)
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Signup Fee Reference</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono">{{ $record->finalOnboarding->signup_fee_reference }}</dd>
+                                </div>
+                                @endif
+                                @if($record->finalOnboarding->model_fee_reference)
+                                <div>
+                                    <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Model Fee Reference</dt>
+                                    <dd class="mt-1 text-sm text-gray-900 dark:text-white font-mono">{{ $record->finalOnboarding->model_fee_reference }}</dd>
+                                </div>
+                                @endif
+                                @if($record->finalOnboarding->payment_notes)
+                                <div class="col-span-full">
+                                    <dt class="text-sm font-medium text-gray-700 dark:text-gray-300">Payment Notes</dt>
+                                    <dd class="mt-1">
+                                        <div class="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4">
+                                            <p class="text-sm text-blue-800 dark:text-blue-200">{{ $record->finalOnboarding->payment_notes }}</p>
+                                        </div>
+                                    </dd>
+                                </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Form Data Submitted --}}
+                        @if(!empty($record->finalOnboarding->form_data))
+                            <div class="mt-6">
+                                <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3">Additional Form Data</h4>
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    @foreach($record->finalOnboarding->form_data ?? [] as $key => $value)
+                                        @if(!empty($value) && !is_array($value))
+                                            <div>
+                                                <span class="text-sm">
+                                                    <span class="font-medium text-gray-700 dark:text-gray-300">{{ ucwords(str_replace('_', ' ', $key)) }}:</span>
+                                                    <span class="text-gray-900 dark:text-white">{{ $value }}</span>
+                                                </span>
+                                            </div>
+                                        @elseif(is_array($value) && isset($value['original_name']))
+                                            <div>
+                                                <dt class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{{ ucwords(str_replace('_', ' ', $key)) }}</dt>
+                                                <dd class="text-sm text-gray-900 dark:text-white">{{ $value['original_name'] }}</dd>
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- Section 4: Review Information --}}
         @if($record->reviewed_by !== null || $record->decline_reason !== null)
             <div class="fi-section rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
                 <div class="fi-section-header flex items-center gap-x-3 overflow-hidden px-6 py-4">
