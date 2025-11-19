@@ -15,6 +15,92 @@
 
     <style>
         [x-cloak] { display: none !important; }
+
+        /* Prose/Typography styles for rich text content */
+        .prose {
+            color: #374151;
+            max-width: 65ch;
+        }
+        .prose p {
+            margin-top: 0.75em;
+            margin-bottom: 0.75em;
+        }
+        .prose h2 {
+            font-weight: 700;
+            font-size: 1.25em;
+            margin-top: 1.5em;
+            margin-bottom: 0.75em;
+            line-height: 1.3;
+            color: #111827;
+        }
+        .prose h3 {
+            font-weight: 600;
+            font-size: 1.125em;
+            margin-top: 1.25em;
+            margin-bottom: 0.5em;
+            line-height: 1.4;
+            color: #111827;
+        }
+        .prose strong {
+            font-weight: 600;
+            color: #111827;
+        }
+        .prose em {
+            font-style: italic;
+        }
+        .prose ul, .prose ol {
+            margin-top: 0.75em;
+            margin-bottom: 0.75em;
+            padding-left: 1.625em;
+        }
+        .prose ul {
+            list-style-type: disc;
+        }
+        .prose ol {
+            list-style-type: decimal;
+        }
+        .prose li {
+            margin-top: 0.375em;
+            margin-bottom: 0.375em;
+        }
+        .prose a {
+            color: #2563eb;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+        .prose a:hover {
+            color: #1d4ed8;
+        }
+        .prose-sm {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        .prose-sm p {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+        }
+        .prose-sm h2 {
+            font-size: 1.125em;
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+        }
+        .prose-sm h3 {
+            font-size: 1em;
+            margin-top: 0.875em;
+            margin-bottom: 0.375em;
+        }
+        .prose-sm ul, .prose-sm ol {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+            padding-left: 1.5em;
+        }
+        .prose-sm li {
+            margin-top: 0.25em;
+            margin-bottom: 0.25em;
+        }
+        .max-w-none {
+            max-width: none;
+        }
     </style>
 </head>
 <body class="bg-gray-50 antialiased">

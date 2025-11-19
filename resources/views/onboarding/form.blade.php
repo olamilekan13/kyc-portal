@@ -209,7 +209,7 @@
                                     </div>
                                 </div>
                                 @if($model->description)
-                                    <p class="text-sm text-gray-600 mb-4">{{ $model->description }}</p>
+                                    <div class="text-sm text-gray-600 mb-4 prose prose-sm max-w-none prose-headings:text-gray-900 prose-a:text-blue-600 prose-strong:text-gray-900">{!! $model->description !!}</div>
                                 @endif
                                 <div class="pt-3 border-t border-gray-200">
                                     <p class="text-2xl font-bold text-blue-600">₦{{ number_format($model->price, 2) }}</p>
@@ -282,6 +282,71 @@
                                 <p class="text-sm text-gray-600">Pay instantly with Paystack</p>
                             </div>
                         </label>
+                    </div>
+                </div>
+
+                <!-- Solar Power Option -->
+                <div x-show="selectedModel" x-cloak class="mb-6" x-data="{ solarPower: '{{ old('solar_power', $finalOnboarding->solar_power ?? 'no') }}', solarPowerAmount: {{ $solarPowerAmount ?? 0 }} }">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Do you want solar power?</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Yes Option -->
+                        <label class="relative cursor-pointer">
+                            <input
+                                type="radio"
+                                name="solar_power"
+                                value="yes"
+                                x-model="solarPower"
+                                class="peer sr-only"
+                            />
+                            <div class="border-2 border-gray-200 rounded-xl p-5 transition-all hover:border-green-400 peer-checked:border-green-600 peer-checked:ring-2 peer-checked:ring-green-200 peer-checked:bg-green-50">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold text-gray-900">Yes</span>
+                                    <div class="peer-checked:block hidden">
+                                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600">Include solar power in your package</p>
+                            </div>
+                        </label>
+
+                        <!-- No Option -->
+                        <label class="relative cursor-pointer">
+                            <input
+                                type="radio"
+                                name="solar_power"
+                                value="no"
+                                x-model="solarPower"
+                                class="peer sr-only"
+                            />
+                            <div class="border-2 border-gray-200 rounded-xl p-5 transition-all hover:border-gray-400 peer-checked:border-gray-600 peer-checked:ring-2 peer-checked:ring-gray-200 peer-checked:bg-gray-50">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold text-gray-900">No</span>
+                                    <div class="peer-checked:block hidden">
+                                        <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600">Continue without solar power</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- Solar Power Details (shown when Yes is selected) -->
+                    <div x-show="solarPower === 'yes'" x-cloak class="mt-4 p-5 bg-gradient-to-r from-green-50 to-yellow-50 border border-green-200 rounded-xl">
+                        <div class="flex items-start space-x-4">
+                            <img src="{{ asset('images/solar_power.jpg') }}" alt="Solar Power" class="w-32 h-32 object-cover rounded-lg shadow-lg">
+                            <div class="flex-1">
+                                <h4 class="text-lg font-bold text-gray-900 mb-2">Solar Power Package</h4>
+                                <p class="text-sm text-gray-700 mb-3">Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.</p>
+                                <div class="flex items-baseline space-x-2">
+                                    <span class="text-sm text-gray-600">Price:</span>
+                                    <span class="text-2xl font-bold text-green-600">₦<span x-text="solarPowerAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')"></span></span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

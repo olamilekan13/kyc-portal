@@ -36,11 +36,22 @@ class PartnershipModelResource extends Resource
                             ->label('Model Name')
                             ->placeholder('e.g., Bronze Partnership, Silver Partnership'),
 
-                        FormFields\Textarea::make('description')
-                            ->maxLength(65535)
-                            ->rows(3)
+                        FormFields\RichEditor::make('description')
                             ->label('Description')
-                            ->placeholder('Describe the benefits and features of this partnership model'),
+                            ->placeholder('Describe the benefits and features of this partnership model')
+                            ->toolbarButtons([
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                                'link',
+                                'h2',
+                                'h3',
+                                'undo',
+                                'redo',
+                            ])
+                            ->columnSpanFull(),
 
                         FormFields\TextInput::make('price')
                             ->required()
@@ -77,7 +88,9 @@ class PartnershipModelResource extends Resource
 
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
-                    ->searchable(),
+                    ->searchable()
+                    ->html()
+                    ->formatStateUsing(fn ($state) => strip_tags($state)),
 
                 Tables\Columns\TextColumn::make('price')
                     ->money('NGN')

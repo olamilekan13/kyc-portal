@@ -11,6 +11,9 @@ A new final onboarding form has been submitted and requires your attention.
 
 ## Partnership & Payment Details
 - **Partnership Model:** {{ $partnershipModel }}
+@if($finalOnboarding->solar_power)
+- **Solar Power Package:** Yes - ₦{{ number_format($finalOnboarding->solar_power_amount, 2) }}
+@endif
 - **Total Amount:** ₦{{ number_format($totalAmount, 2) }}
 - **Payment Method:** {{ $paymentMethod }}
 - **Payment Status:** {{ ucfirst($finalOnboarding->payment_status) }}

@@ -9,9 +9,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
-class FinalOnboardingNotification extends Mailable
+class PaymentSubmissionNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -33,7 +35,7 @@ class FinalOnboardingNotification extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'New Final Onboarding Submission - ' . $this->kycSubmission->onboarding_token,
+            subject: 'New Payment Submission - ' . $this->kycSubmission->onboarding_token,
         );
     }
 
@@ -43,17 +45,21 @@ class FinalOnboardingNotification extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.onboarding.notification',
+            markdown: 'emails.payment.notification',
             with: [
                 'kycSubmission' => $this->kycSubmission,
                 'finalOnboarding' => $this->finalOnboarding,
                 'applicantName' => $this->kycSubmission->submission_data['full_name'] ?? 'N/A',
                 'applicantEmail' => $this->kycSubmission->submission_data['email'] ?? 'N/A',
                 'partnershipModel' => $this->finalOnboarding->partnership_model_name,
+                'partnershipPrice' => $this->finalOnboarding->partnership_model_price,
+                'signupFee' => $this->finalOnboarding->signup_fee_amount,
                 'totalAmount' => $this->finalOnboarding->total_amount,
-                'paymentMethod' => ucfirst(str_replace('_', ' ', $this->finalOnboarding->payment_method)),
+                'paymentReference' => $this->finalOnboarding->signup_fee_reference ?? $this->finalOnboarding->model_fee_reference,
+                'paymentNotes' => $this->finalOnboarding->payment_notes,
+                'hasPaymentProof' => !empty($this->finalOnboarding->payment_proof),
                 'onboardingToken' => $this->kycSubmission->onboarding_token,
-                'submittedAt' => $this->finalOnboarding->created_at->format('F d, Y h:i A'),
+                'submittedAt' => now()->format('F d, Y h:i A'),
             ]
         );
     }
@@ -65,6 +71,15 @@ class FinalOnboardingNotification extends Mailable
      */
     public function attachments(): array
     {
-        return [];
+        $attachments = [];
+
+        // Attach payment proof if exists
+        if ($this->finalOnboarding->payment_proof && Storage::disk('local')->exists($this->finalOnboarding->payment_proof)) {
+            $attachments[] = Attachment::fromStorageDisk('local', $this->finalOnboarding->payment_proof)
+                ->as('payment_proof_' . $this->kycSubmission->onboarding_token . '.' . pathinfo($this->finalOnboarding->payment_proof, PATHINFO_EXTENSION))
+                ->withMime(Storage::disk('local')->mimeType($this->finalOnboarding->payment_proof));
+        }
+
+        return $attachments;
     }
 }

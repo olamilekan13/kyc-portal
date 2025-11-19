@@ -8,6 +8,7 @@ use App\Models\FinalOnboarding;
 use App\Models\FinalOnboardingForm;
 use App\Models\SystemSetting;
 use App\Mail\FinalOnboardingNotification;
+use App\Mail\PaymentSubmissionNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -57,6 +58,7 @@ class FinalOnboardingController extends Controller
 
             // Get system settings
             $signupFee = SystemSetting::get('signup_fee_amount', 5000);
+            $solarPowerAmount = SystemSetting::get('solar_power_amount', 0);
             $bankName = SystemSetting::get('bank_name', '');
             $bankAccountNumber = SystemSetting::get('bank_account_number', '');
             $bankAccountName = SystemSetting::get('bank_account_name', '');
@@ -77,6 +79,7 @@ class FinalOnboardingController extends Controller
                 'onboardingForm' => $onboardingForm,
                 'partnershipModels' => $partnershipModels,
                 'signupFee' => $signupFee,
+                'solarPowerAmount' => $solarPowerAmount,
                 'bankName' => $bankName,
                 'bankAccountNumber' => $bankAccountNumber,
                 'bankAccountName' => $bankAccountName,
@@ -141,7 +144,17 @@ class FinalOnboardingController extends Controller
 
             // Get signup fee
             $signupFee = SystemSetting::get('signup_fee_amount', 5000);
-            $totalAmount = $signupFee + $partnershipModel->price;
+
+            // Handle solar power
+            $solarPower = $request->input('solar_power') === 'yes';
+            $solarPowerAmount = 0;
+
+            if ($solarPower) {
+                $solarPowerAmount = SystemSetting::get('solar_power_amount', 0);
+            }
+
+            // Calculate total amount
+            $totalAmount = $signupFee + $partnershipModel->price + $solarPowerAmount;
 
             // Create or update final onboarding record
             $finalOnboarding = FinalOnboarding::updateOrCreate(
@@ -153,6 +166,8 @@ class FinalOnboardingController extends Controller
                     'partnership_model_name' => $partnershipModel->name,
                     'partnership_model_price' => $partnershipModel->price,
                     'signup_fee_amount' => $signupFee,
+                    'solar_power' => $solarPower,
+                    'solar_power_amount' => $solarPowerAmount,
                     'total_amount' => $totalAmount,
                     'payment_method' => $request->payment_method,
                 ]
@@ -291,7 +306,7 @@ class FinalOnboardingController extends Controller
                 $file = $request->file($fieldName);
 
                 // Store file in private storage
-                $path = $file->store('onboarding-documents', 'private');
+                $path = $file->store('onboarding-documents', 'local');
 
                 // Store file metadata
                 $formData[$fieldName] = [
@@ -386,8 +401,9 @@ class FinalOnboardingController extends Controller
             // Validate request
             $validator = Validator::make($request->all(), [
                 'payment_type' => ['required', 'in:signup_fee,model_fee,both'],
-                'payment_reference' => ['required', 'string', 'max:255'],
+                'payment_reference' => ['nullable', 'string', 'max:255'],
                 'payment_notes' => ['nullable', 'string', 'max:1000'],
+                'payment_proof' => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,pdf'],
             ]);
 
             if ($validator->fails()) {
@@ -397,6 +413,13 @@ class FinalOnboardingController extends Controller
             }
 
             $finalOnboarding = $kycSubmission->finalOnboarding;
+
+            // Handle payment proof file upload
+            if ($request->hasFile('payment_proof')) {
+                $file = $request->file('payment_proof');
+                $path = $file->store('payment-proofs', 'local');
+                $finalOnboarding->payment_proof = $path;
+            }
 
             // Update payment information based on type
             if ($request->payment_type === 'signup_fee' || $request->payment_type === 'both') {
@@ -418,6 +441,29 @@ class FinalOnboardingController extends Controller
                 'payment_type' => $request->payment_type,
                 'payment_reference' => $request->payment_reference,
             ]);
+
+            // Send email notification to admin
+            try {
+                $notificationEmail = SystemSetting::get('onboarding_notification_email')
+                    ?? SystemSetting::get('admin_notification_email');
+
+                if ($notificationEmail) {
+                    Mail::to($notificationEmail)->send(
+                        new PaymentSubmissionNotification($kycSubmission, $finalOnboarding)
+                    );
+
+                    Log::info('Payment submission notification email sent', [
+                        'final_onboarding_id' => $finalOnboarding->id,
+                        'recipient' => $notificationEmail,
+                    ]);
+                }
+            } catch (Exception $e) {
+                Log::error('Failed to send payment submission notification email', [
+                    'final_onboarding_id' => $finalOnboarding->id,
+                    'error' => $e->getMessage(),
+                ]);
+                // Don't fail the request if email fails
+            }
 
             // Redirect to confirmation page
             return redirect()->route('onboarding.confirmation', ['token' => $token])

@@ -20,6 +20,8 @@ class FinalOnboarding extends Model
         'partnership_model_price',
         'signup_fee_amount',
         'total_amount',
+        'solar_power',
+        'solar_power_amount',
         'payment_method',
         'payment_status',
         'signup_fee_paid',
@@ -29,6 +31,7 @@ class FinalOnboarding extends Model
         'model_fee_reference',
         'model_fee_paid_at',
         'payment_notes',
+        'payment_proof',
         'paystack_response',
     ];
 
@@ -37,6 +40,8 @@ class FinalOnboarding extends Model
         'partnership_model_price' => 'decimal:2',
         'signup_fee_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'solar_power' => 'boolean',
+        'solar_power_amount' => 'decimal:2',
         'signup_fee_paid' => 'boolean',
         'model_fee_paid' => 'boolean',
         'signup_fee_paid_at' => 'datetime',

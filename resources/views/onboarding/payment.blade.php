@@ -102,6 +102,19 @@
                     <p class="text-lg font-bold text-gray-900">₦{{ number_format($finalOnboarding->signup_fee_amount, 2) }}</p>
                 </div>
 
+                @if($finalOnboarding->solar_power)
+                <div class="flex justify-between items-center pb-3 border-b border-gray-200">
+                    <div>
+                        <p class="font-semibold text-gray-900">Solar Power</p>
+                        <div class="flex items-center mt-2 space-x-3">
+                            <img src="{{ asset('images/solar_power.jpg') }}" alt="Solar Power" class="w-16 h-16 object-cover rounded-lg shadow-sm">
+                            <p class="text-sm text-gray-600">Clean energy solution</p>
+                        </div>
+                    </div>
+                    <p class="text-lg font-bold text-gray-900">₦{{ number_format($finalOnboarding->solar_power_amount, 2) }}</p>
+                </div>
+                @endif
+
                 <div class="flex justify-between items-center pt-3">
                     <p class="text-xl font-bold text-gray-900">Total Amount</p>
                     <p class="text-3xl font-bold text-blue-600">₦{{ number_format($finalOnboarding->total_amount, 2) }}</p>
@@ -183,19 +196,31 @@
                     </div>
                 </div>
 
-                <form action="{{ route('onboarding.bank-transfer', ['token' => $kycSubmission->onboarding_token]) }}" method="POST">
+                <form action="{{ route('onboarding.bank-transfer', ['token' => $kycSubmission->onboarding_token]) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="payment_type" value="both">
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Payment Reference/Transaction ID <span class="text-red-600">*</span></label>
-                            <input type="text" name="payment_reference" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your transaction reference" required>
-                            <p class="mt-1 text-xs text-gray-500">Enter the reference from your bank transaction</p>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Payment Reference/Transaction ID</label>
+                            <input type="text" name="payment_reference" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter your transaction reference" value="{{ old('payment_reference') }}">
+                            <p class="mt-1 text-xs text-gray-500">Enter the reference from your bank transaction (optional)</p>
+                            @error('payment_reference')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Proof of Payment</label>
+                            <input type="file" name="payment_proof" accept="image/*,.pdf" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <p class="mt-1 text-xs text-gray-500">Upload a screenshot or receipt of your payment (JPG, PNG, or PDF - Max 5MB)</p>
+                            @error('payment_proof')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Additional Notes</label>
-                            <textarea name="payment_notes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Any additional information..."></textarea>
+                            <textarea name="payment_notes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Any additional information...">{{ old('payment_notes') }}</textarea>
                         </div>
 
                         <button type="submit" class="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200">

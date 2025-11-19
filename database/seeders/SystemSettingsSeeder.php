@@ -57,6 +57,13 @@ class SystemSettingsSeeder extends Seeder
                 'group' => 'payments',
                 'description' => 'Compulsory non-refundable signup fee',
             ],
+            [
+                'key' => 'solar_power_amount',
+                'value' => '50000',
+                'type' => 'number',
+                'group' => 'payments',
+                'description' => 'Solar power package amount',
+            ],
 
             // Notification Settings
             [

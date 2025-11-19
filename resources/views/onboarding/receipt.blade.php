@@ -261,6 +261,21 @@
                 </div>
                 @endif
 
+                @if($finalOnboarding->solar_power)
+                <div class="info-row" style="margin-top: 20px;">
+                    <div class="info-label">Solar Power Package:</div>
+                    <div class="info-value">₦{{ number_format($finalOnboarding->solar_power_amount, 2) }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Solar Power Status:</div>
+                    <div class="info-value">
+                        <span class="status-badge status-paid">
+                            INCLUDED
+                        </span>
+                    </div>
+                </div>
+                @endif
+
                 <div class="info-row" style="margin-top: 20px;">
                     <div class="info-label">Payment Method:</div>
                     <div class="info-value" style="text-transform: capitalize;">{{ str_replace('_', ' ', $finalOnboarding->payment_method) }}</div>
