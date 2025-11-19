@@ -30,7 +30,8 @@
       "Bash(grep:*)",
       "Bash(php test_signup_fee.php:*)",
       "Bash(php fix_signup_fee_key.php:*)",
-      "Bash(php export_settings.php:*)"
+      "Bash(php export_settings.php:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []
