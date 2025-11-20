@@ -72,11 +72,41 @@ class SystemSettingsSeeder extends Seeder
                 'description' => 'Title/question displayed for the solar power option on onboarding form',
             ],
             [
+                'key' => 'solar_power_description',
+                'value' => 'Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.',
+                'type' => 'textarea',
+                'group' => 'onboarding',
+                'description' => 'Description text for solar power package displayed when user selects Yes',
+            ],
+            [
                 'key' => 'partnership_fee_label',
                 'value' => 'Partnership Fee',
                 'type' => 'text',
                 'group' => 'onboarding',
                 'description' => 'Label displayed under the price in partnership model cards',
+            ],
+
+            // WhatsApp Settings
+            [
+                'key' => 'whatsapp_business_number',
+                'value' => '',
+                'type' => 'text',
+                'group' => 'general',
+                'description' => 'WhatsApp Business number for chat widget (format: country code + number without + or spaces, e.g., 2348012345678)',
+            ],
+            [
+                'key' => 'whatsapp_chat_enabled',
+                'value' => '1',
+                'type' => 'number',
+                'group' => 'general',
+                'description' => 'Enable/Disable WhatsApp chat widget (1 = enabled, 0 = disabled)',
+            ],
+            [
+                'key' => 'whatsapp_welcome_message',
+                'value' => 'Hello! How can we help you today?',
+                'type' => 'textarea',
+                'group' => 'general',
+                'description' => 'Default welcome message for WhatsApp chat',
             ],
 
             // Notification Settings
