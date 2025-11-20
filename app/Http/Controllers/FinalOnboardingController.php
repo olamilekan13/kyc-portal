@@ -60,6 +60,7 @@ class FinalOnboardingController extends Controller
             $signupFee = SystemSetting::get('signup_fee_amount', 5000);
             $solarPowerAmount = SystemSetting::get('solar_power_amount', 0);
             $solarPowerTitle = SystemSetting::get('solar_power_title', 'Do you want solar power?');
+            $solarPowerDescription = SystemSetting::get('solar_power_description', 'Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.');
             $partnershipFeeLabel = SystemSetting::get('partnership_fee_label', 'Partnership Fee');
             $bankName = SystemSetting::get('bank_name', '');
             $bankAccountNumber = SystemSetting::get('bank_account_number', '');
@@ -83,6 +84,7 @@ class FinalOnboardingController extends Controller
                 'signupFee' => $signupFee,
                 'solarPowerAmount' => $solarPowerAmount,
                 'solarPowerTitle' => $solarPowerTitle,
+                'solarPowerDescription' => $solarPowerDescription,
                 'partnershipFeeLabel' => $partnershipFeeLabel,
                 'bankName' => $bankName,
                 'bankAccountNumber' => $bankAccountNumber,
