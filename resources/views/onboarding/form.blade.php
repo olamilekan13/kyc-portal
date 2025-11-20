@@ -213,7 +213,7 @@
                                 @endif
                                 <div class="pt-3 border-t border-gray-200">
                                     <p class="text-2xl font-bold text-blue-600">₦{{ number_format($model->price, 2) }}</p>
-                                    <p class="text-xs text-gray-500 mt-1">Partnership Fee</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ $partnershipFeeLabel }}</p>
                                 </div>
                             </div>
                         </label>
@@ -287,7 +287,7 @@
 
                 <!-- Solar Power Option -->
                 <div x-show="selectedModel" x-cloak class="mb-6" x-data="{ solarPower: '{{ old('solar_power', $finalOnboarding->solar_power ?? 'no') }}', solarPowerAmount: {{ $solarPowerAmount ?? 0 }} }">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Do you want solar power?</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $solarPowerTitle }}</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Yes Option -->
                         <label class="relative cursor-pointer">

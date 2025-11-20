@@ -64,6 +64,20 @@ class SystemSettingsSeeder extends Seeder
                 'group' => 'payments',
                 'description' => 'Solar power package amount',
             ],
+            [
+                'key' => 'solar_power_title',
+                'value' => 'Do you want solar power?',
+                'type' => 'text',
+                'group' => 'onboarding',
+                'description' => 'Title/question displayed for the solar power option on onboarding form',
+            ],
+            [
+                'key' => 'partnership_fee_label',
+                'value' => 'Partnership Fee',
+                'type' => 'text',
+                'group' => 'onboarding',
+                'description' => 'Label displayed under the price in partnership model cards',
+            ],
 
             // Notification Settings
             [
@@ -89,18 +103,28 @@ class SystemSettingsSeeder extends Seeder
             ],
         ];
 
+        $newCount = 0;
+        $skippedCount = 0;
+
         foreach ($settings as $setting) {
-            SystemSetting::updateOrCreate(
-                ['key' => $setting['key']],
-                [
+            // Check if setting already exists
+            $exists = SystemSetting::where('key', $setting['key'])->exists();
+
+            if (!$exists) {
+                // Only create if it doesn't exist
+                SystemSetting::create([
+                    'key' => $setting['key'],
                     'value' => $setting['value'],
                     'type' => $setting['type'],
                     'group' => $setting['group'],
                     'description' => $setting['description'],
-                ]
-            );
+                ]);
+                $newCount++;
+            } else {
+                $skippedCount++;
+            }
         }
 
-        $this->command->info('System settings seeded successfully!');
+        $this->command->info("System settings seeded successfully! Added: {$newCount}, Skipped (already exists): {$skippedCount}");
     }
 }
