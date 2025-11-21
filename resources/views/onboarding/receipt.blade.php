@@ -189,7 +189,7 @@
                 @endif
                 @if($finalOnboarding->model_fee_reference)
                 <div class="info-row">
-                    <div class="info-label">Partnership Fee Reference:</div>
+                    <div class="info-label">Rental Fee Reference:</div>
                     <div class="info-value">{{ $finalOnboarding->model_fee_reference }}</div>
                 </div>
                 @endif
@@ -220,15 +220,15 @@
             <div class="info-section">
                 <h2>Payment Details</h2>
                 <div class="info-row">
-                    <div class="info-label">Partnership Model:</div>
+                    <div class="info-label">Rental Model:</div>
                     <div class="info-value">{{ $finalOnboarding->partnership_model_name }}</div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Partnership Fee:</div>
+                    <div class="info-label">Rental Fee:</div>
                     <div class="info-value">₦{{ number_format($finalOnboarding->partnership_model_price, 2) }}</div>
                 </div>
                 <div class="info-row">
-                    <div class="info-label">Partnership Fee Status:</div>
+                    <div class="info-label">Rental Fee Status:</div>
                     <div class="info-value">
                         <span class="status-badge {{ $finalOnboarding->model_fee_paid ? 'status-paid' : 'status-pending' }}">
                             {{ $finalOnboarding->model_fee_paid ? 'PAID' : 'PENDING' }}
@@ -237,7 +237,7 @@
                 </div>
                 @if($finalOnboarding->model_fee_paid_at)
                 <div class="info-row">
-                    <div class="info-label">Partnership Fee Paid At:</div>
+                    <div class="info-label">Rental Fee Paid At:</div>
                     <div class="info-value">{{ \Carbon\Carbon::parse($finalOnboarding->model_fee_paid_at)->format('F d, Y h:i A') }}</div>
                 </div>
                 @endif
