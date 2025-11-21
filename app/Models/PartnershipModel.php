@@ -13,12 +13,14 @@ class PartnershipModel extends Model
         'name',
         'description',
         'price',
+        'duration_months',
         'is_active',
         'sort_order',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
+        'duration_months' => 'integer',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
     ];
@@ -45,5 +47,27 @@ class PartnershipModel extends Model
     public function getFormattedPriceAttribute(): string
     {
         return '₦' . number_format($this->price, 2);
+    }
+
+    /**
+     * Get formatted duration for display
+     */
+    public function getFormattedDurationAttribute(): string
+    {
+        if ($this->duration_months == 1) {
+            return '1 Month';
+        } elseif ($this->duration_months < 12) {
+            return $this->duration_months . ' Months';
+        } elseif ($this->duration_months == 12) {
+            return '1 Year';
+        } else {
+            $years = floor($this->duration_months / 12);
+            $months = $this->duration_months % 12;
+            $result = $years . ' Year' . ($years > 1 ? 's' : '');
+            if ($months > 0) {
+                $result .= ' ' . $months . ' Month' . ($months > 1 ? 's' : '');
+            }
+            return $result;
+        }
     }
 }

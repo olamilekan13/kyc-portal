@@ -62,6 +62,19 @@ class PartnershipModelResource extends Resource
                             ->step(0.01)
                             ->minValue(0),
 
+                        FormFields\Select::make('duration_months')
+                            ->required()
+                            ->options([
+                                1 => '1 Month',
+                                3 => '3 Months',
+                                6 => '6 Months',
+                                12 => '1 Year (12 Months)',
+                                24 => '2 Years (24 Months)',
+                            ])
+                            ->default(12)
+                            ->label('Duration')
+                            ->helperText('How long this partnership lasts before renewal is required'),
+
                         FormFields\TextInput::make('sort_order')
                             ->numeric()
                             ->default(0)
@@ -96,6 +109,18 @@ class PartnershipModelResource extends Resource
                     ->money('NGN')
                     ->sortable()
                     ->label('Price'),
+
+                Tables\Columns\TextColumn::make('duration_months')
+                    ->label('Duration')
+                    ->formatStateUsing(fn ($state) => match($state) {
+                        1 => '1 Month',
+                        3 => '3 Months',
+                        6 => '6 Months',
+                        12 => '1 Year',
+                        24 => '2 Years',
+                        default => $state . ' Months',
+                    })
+                    ->sortable(),
 
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean()

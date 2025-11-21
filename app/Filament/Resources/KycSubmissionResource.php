@@ -89,6 +89,29 @@ class KycSubmissionResource extends Resource
                     })
                     ->toggleable(isToggledHiddenByDefault: false),
 
+                Tables\Columns\TextColumn::make('finalOnboarding.renewal_status')
+                    ->label('Renewal Status')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => $state ? ucwords(str_replace('_', ' ', $state)) : 'N/A')
+                    ->color(fn (?string $state): string => match ($state) {
+                        'active' => 'success',
+                        'pending_renewal' => 'warning',
+                        'expired' => 'danger',
+                        'renewed' => 'info',
+                        default => 'gray',
+                    })
+                    ->toggleable(isToggledHiddenByDefault: false),
+
+                Tables\Columns\TextColumn::make('finalOnboarding.partnership_end_date')
+                    ->label('Expires On')
+                    ->date('M d, Y')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: false)
+                    ->color(fn ($record) =>
+                        $record->finalOnboarding?->isExpired() ? 'danger' :
+                        ($record->finalOnboarding?->isExpiringSoon() ? 'warning' : 'success')
+                    ),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Submitted At')
                     ->dateTime('M d, Y H:i')
@@ -104,6 +127,36 @@ class KycSubmissionResource extends Resource
                     ->label('Form Type')
                     ->options(fn (): array => KycForm::pluck('name', 'id')->toArray())
                     ->searchable(),
+
+                Tables\Filters\SelectFilter::make('renewal_status')
+                    ->label('Renewal Status')
+                    ->options([
+                        'active' => 'Active',
+                        'pending_renewal' => 'Pending Renewal',
+                        'expired' => 'Expired',
+                        'renewed' => 'Renewed',
+                    ])
+                    ->query(function ($query, array $data) {
+                        if ($data['value']) {
+                            return $query->whereHas('finalOnboarding', function ($q) use ($data) {
+                                $q->where('renewal_status', $data['value']);
+                            });
+                        }
+                        return $query;
+                    }),
+
+                Tables\Filters\Filter::make('expiring_soon')
+                    ->label('Expiring Soon (10 days)')
+                    ->query(function ($query) {
+                        return $query->whereHas('finalOnboarding', function ($q) {
+                            $q->where('payment_status', 'completed')
+                                ->where('renewal_status', 'active')
+                                ->whereNotNull('partnership_end_date')
+                                ->whereDate('partnership_end_date', '<=', now()->addDays(10))
+                                ->whereDate('partnership_end_date', '>=', now());
+                        });
+                    })
+                    ->toggle(),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
@@ -217,6 +270,92 @@ class KycSubmissionResource extends Resource
                     ->url(fn (KycSubmission $record): string =>
                         route('filament.dashboard.resources.kyc-submissions.view', ['record' => $record])
                     ),
+
+                Action::make('approve_renewal')
+                    ->label('Approve Renewal')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('success')
+                    ->visible(fn (KycSubmission $record): bool =>
+                        $record->finalOnboarding?->renewal_status === 'pending_renewal'
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading('Approve Renewal Payment')
+                    ->modalDescription(fn (KycSubmission $record): string =>
+                        "Approve the renewal payment for {$record->finalOnboarding?->partner_name}? This will extend their partnership."
+                    )
+                    ->action(function (KycSubmission $record) {
+                        $finalOnboarding = $record->finalOnboarding;
+                        if (!$finalOnboarding) return;
+
+                        $durationMonths = $finalOnboarding->partnershipModel?->duration_months ?? 12;
+
+                        // Calculate new end date
+                        $startDate = now();
+                        if ($finalOnboarding->partnership_end_date && $finalOnboarding->partnership_end_date->isFuture()) {
+                            $startDate = $finalOnboarding->partnership_end_date;
+                        }
+
+                        $finalOnboarding->update([
+                            'partnership_start_date' => now()->toDateString(),
+                            'partnership_end_date' => $startDate->copy()->addMonths($durationMonths)->toDateString(),
+                            'renewal_status' => 'renewed',
+                            'renewal_token' => \App\Models\FinalOnboarding::generateRenewalToken(),
+                            'reminder_sent_at' => null,
+                            'reminder_count' => 0,
+                            'duration_months' => $durationMonths,
+                        ]);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Renewal approved')
+                            ->body("Partnership renewed until {$finalOnboarding->partnership_end_date->format('M d, Y')}")
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('send_reminder')
+                    ->label('Send Reminder')
+                    ->icon('heroicon-o-bell')
+                    ->color('warning')
+                    ->visible(fn (KycSubmission $record): bool =>
+                        $record->finalOnboarding?->renewal_status === 'active' &&
+                        $record->finalOnboarding?->partnership_end_date !== null
+                    )
+                    ->requiresConfirmation()
+                    ->modalHeading('Send Renewal Reminder')
+                    ->modalDescription('Send a renewal reminder email to this partner?')
+                    ->action(function (KycSubmission $record) {
+                        $finalOnboarding = $record->finalOnboarding;
+                        if (!$finalOnboarding || !$finalOnboarding->partner_email) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Cannot send reminder')
+                                ->body('No email address found for this partner.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        try {
+                            \Illuminate\Support\Facades\Mail::to($finalOnboarding->partner_email)
+                                ->send(new \App\Mail\PartnershipRenewalReminderMail($finalOnboarding));
+
+                            $finalOnboarding->update([
+                                'reminder_sent_at' => now(),
+                                'reminder_count' => $finalOnboarding->reminder_count + 1,
+                            ]);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Reminder sent')
+                                ->body("Renewal reminder sent to {$finalOnboarding->partner_email}")
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Failed to send reminder')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    }),
 
                 Action::make('delete')
                     ->label('Delete')

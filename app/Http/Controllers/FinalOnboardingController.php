@@ -565,6 +565,9 @@ class FinalOnboardingController extends Controller
                 $kycSubmission->onboarding_status = 'completed';
                 $kycSubmission->onboarding_completed_at = now();
                 $kycSubmission->save();
+
+                // Activate partnership with start/end dates
+                $finalOnboarding->activatePartnership();
             }
 
             Log::info('Paystack payment verified', [

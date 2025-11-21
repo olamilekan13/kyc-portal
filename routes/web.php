@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\LivenessVerificationController;
 use App\Http\Controllers\Api\NinVerificationController;
 use App\Http\Controllers\KycSubmissionController;
 use App\Http\Controllers\FinalOnboardingController;
+use App\Http\Controllers\RenewalController;
 use App\Models\HomePageSetting;
 use Illuminate\Support\Facades\Route;
 
@@ -72,4 +73,31 @@ Route::prefix('onboarding')->name('onboarding.')->group(function () {
     // Download payment receipt
     Route::get('/{token}/receipt', [FinalOnboardingController::class, 'downloadReceipt'])
         ->name('receipt');
+});
+
+// Partnership Renewal Routes
+Route::prefix('renew')->name('renewal.')->group(function () {
+    // Show renewal page
+    Route::get('/{token}', [RenewalController::class, 'show'])
+        ->name('show');
+
+    // Submit renewal selection
+    Route::post('/{token}/submit', [RenewalController::class, 'submitSelection'])
+        ->name('submit');
+
+    // Renewal payment page
+    Route::get('/{token}/payment', [RenewalController::class, 'payment'])
+        ->name('payment');
+
+    // Process bank transfer payment for renewal
+    Route::post('/{token}/payment/bank-transfer', [RenewalController::class, 'processBankTransfer'])
+        ->name('bank-transfer');
+
+    // Paystack payment callback for renewal
+    Route::get('/{token}/payment/paystack/callback', [RenewalController::class, 'paystackCallback'])
+        ->name('paystack-callback');
+
+    // Renewal confirmation page
+    Route::get('/{token}/confirmation', [RenewalController::class, 'confirmation'])
+        ->name('confirmation');
 });
