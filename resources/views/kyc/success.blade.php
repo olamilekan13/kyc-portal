@@ -120,8 +120,8 @@
     <div class="mt-6 text-center">
         <p class="text-sm text-gray-500">
             Questions? Contact us at
-            <a href="mailto:support@kycportal.com" class="text-blue-600 hover:text-blue-700 underline">
-                support@kycportal.com
+            <a href="mailto:dmpluspower@digitalmediaplus.info" class="text-blue-600 hover:text-blue-700 underline">
+                dmpluspower@digitalmediaplus.info
             </a>
         </p>
     </div>

@@ -18,7 +18,7 @@ class AdminUserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'dmpluspower@digitalmediaplus.info'],
             [
-                'name' => 'Admin User',
+                'name' => 'DmplusPower',
                 'password' => Hash::make('dmplus123#'),
                 'role' => 'super_admin',
                 'email_verified_at' => now(),

@@ -134,7 +134,7 @@
                         @endif
                         @if($finalOnboarding->model_fee_reference)
                             <div class="flex justify-between">
-                                <p class="text-sm text-gray-600">Partnership Fee Reference:</p>
+                                <p class="text-sm text-gray-600">Rental Fee Reference:</p>
                                 <p class="text-sm font-mono font-semibold text-gray-900">{{ $finalOnboarding->model_fee_reference }}</p>
                             </div>
                         @endif

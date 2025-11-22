@@ -38,14 +38,15 @@ If you need clarification or assistance with your resubmission, our support team
 <x-mail::table>
 | Contact Information | |
 | :------------------ | :------ |
-| **Email** | support@kycportal.com |
-| **Phone** | +1 (555) 123-4567 |
+| **Email** | dmpluspower@digitalmediaplus.info |
+| **Phone** | 08054629268 |
 | **Hours** | Monday - Friday, 9 AM - 5 PM |
 </x-mail::table>
 
 We appreciate your understanding and look forward to assisting you with your verification.
 
 Best regards,<br>
-**{{ $reviewerName }}**<br>
-{{ config('app.name') }}
+**DmplusPower Team**<br>
+{{-- {{ config('app.name') }} --}}
 </x-mail::message>
+

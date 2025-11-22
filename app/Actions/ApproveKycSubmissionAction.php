@@ -185,7 +185,7 @@ Your account is now fully verified and you can proceed with using our services.
 If you have any questions or concerns, please don't hesitate to contact our support team.
 
 Best regards,
-KYC Verification Team
+DmplusPower Team
 MESSAGE;
     }
 

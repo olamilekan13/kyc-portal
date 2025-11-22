@@ -65,6 +65,7 @@ class PartnershipModelResource extends Resource
                         FormFields\Select::make('duration_months')
                             ->required()
                             ->options([
+                                0 => 'No Renewal Required',
                                 1 => '1 Month',
                                 3 => '3 Months',
                                 6 => '6 Months',
@@ -73,7 +74,7 @@ class PartnershipModelResource extends Resource
                             ])
                             ->default(12)
                             ->label('Duration')
-                            ->helperText('How long this partnership lasts before renewal is required'),
+                            ->helperText('Select "No Renewal Required" for models like Basic that don\'t need renewal'),
 
                         FormFields\TextInput::make('sort_order')
                             ->numeric()
@@ -113,6 +114,7 @@ class PartnershipModelResource extends Resource
                 Tables\Columns\TextColumn::make('duration_months')
                     ->label('Duration')
                     ->formatStateUsing(fn ($state) => match($state) {
+                        0 => 'No Renewal',
                         1 => '1 Month',
                         3 => '3 Months',
                         6 => '6 Months',

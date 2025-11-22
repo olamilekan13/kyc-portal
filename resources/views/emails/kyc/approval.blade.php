@@ -27,13 +27,13 @@ If you have any questions or need assistance, please don't hesitate to contact o
 <x-mail::table>
 | Contact Information | |
 | :------------------ | :------ |
-| **Email** | support@kycportal.com |
-| **Phone** | +1 (555) 123-4567 |
+| **Email** | dmpluspower@digitalmediaplus.info |
+| **Phone** | 08054629268 |
 </x-mail::table>
 
 Thank you for completing your KYC verification.
 
 Best regards,<br>
-**{{ $reviewerName }}**<br>
-{{ config('app.name') }}
+**DmplusPower Team**<br>
+{{-- {{ config('app.name') }} --}}
 </x-mail::message>
