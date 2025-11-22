@@ -66,6 +66,9 @@ class ApproveKycSubmissionAction
                     'reviewed_at' => now(),
                 ]);
 
+                // Update payment status to completed if final onboarding exists
+                $this->updatePaymentStatus($submission);
+
                 // Create notification record
                 $notification = $this->createNotificationRecord($submission, $reviewer);
 
@@ -248,6 +251,37 @@ MESSAGE;
 
             // Note: We don't rethrow here because the approval was successful,
             // we just failed to send the notification email
+        }
+    }
+
+    /**
+     * Update payment status to completed when KYC is approved
+     *
+     * @param KycSubmission $submission
+     * @return void
+     */
+    protected function updatePaymentStatus(KycSubmission $submission): void
+    {
+        $finalOnboarding = $submission->finalOnboarding;
+
+        if ($finalOnboarding) {
+            $finalOnboarding->update([
+                'payment_status' => 'completed',
+                'signup_fee_paid' => true,
+                'signup_fee_paid_at' => $finalOnboarding->signup_fee_paid_at ?? now(),
+                'model_fee_paid' => true,
+                'model_fee_paid_at' => $finalOnboarding->model_fee_paid_at ?? now(),
+            ]);
+
+            // Activate partnership if not already activated
+            if (!$finalOnboarding->partnership_start_date) {
+                $finalOnboarding->activatePartnership();
+            }
+
+            Log::info('Payment status updated to completed on KYC approval', [
+                'submission_id' => $submission->id,
+                'final_onboarding_id' => $finalOnboarding->id,
+            ]);
         }
     }
 
