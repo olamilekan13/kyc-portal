@@ -54,7 +54,7 @@ A new KYC form submission has been received and requires your review.
 **Note:** Images from the submission are attached to this email for your review.
 @endif
 
-<x-mail::button :url="config('app.url') . '/admin/kyc-submissions/' . $submission->id">
+<x-mail::button :url="config('app.url') . '/dashboard/kyc-submissions/' . $submission->id">
 Review Submission in Admin Panel
 </x-mail::button>
 
