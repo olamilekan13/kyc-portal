@@ -7,6 +7,7 @@ use App\Models\PartnershipModel;
 use App\Models\FinalOnboarding;
 use App\Models\FinalOnboardingForm;
 use App\Models\SystemSetting;
+use App\Models\PartnerUser;
 use App\Mail\FinalOnboardingNotification;
 use App\Mail\PaymentSubmissionNotification;
 use Illuminate\Http\Request;
@@ -178,6 +179,19 @@ class FinalOnboardingController extends Controller
                     'payment_method' => $request->payment_method,
                 ]
             );
+
+            // Update partner user progress
+            $partnerUser = PartnerUser::where('kyc_submission_id', $kycSubmission->id)->first();
+            if ($partnerUser) {
+                $partnerUser->update([
+                    'onboarding_form_completed' => true,
+                ]);
+
+                Log::info('Partner user onboarding progress updated', [
+                    'partner_user_id' => $partnerUser->id,
+                    'onboarding_form_completed' => true,
+                ]);
+            }
 
             Log::info('Final onboarding selection submitted', [
                 'kyc_submission_id' => $kycSubmission->id,
@@ -568,6 +582,19 @@ class FinalOnboardingController extends Controller
 
                 // Activate partnership with start/end dates
                 $finalOnboarding->activatePartnership();
+
+                // Update partner user progress
+                $partnerUser = PartnerUser::where('kyc_submission_id', $kycSubmission->id)->first();
+                if ($partnerUser) {
+                    $partnerUser->update([
+                        'payment_completed' => true,
+                    ]);
+
+                    Log::info('Partner user payment completed', [
+                        'partner_user_id' => $partnerUser->id,
+                        'payment_completed' => true,
+                    ]);
+                }
             }
 
             Log::info('Paystack payment verified', [

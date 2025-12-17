@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\NinVerificationController;
 use App\Http\Controllers\KycSubmissionController;
 use App\Http\Controllers\FinalOnboardingController;
 use App\Http\Controllers\RenewalController;
+use App\Http\Controllers\Partner\AuthController;
+use App\Http\Controllers\Partner\DashboardController;
 use App\Models\HomePageSetting;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +31,10 @@ Route::prefix('kyc')->name('kyc.')->group(function () {
     // Show default KYC form when accessing /kyc directly
     Route::get('/', [KycSubmissionController::class, 'showDefault'])
         ->name('default');
+
+    // Account created page (must come before wildcard route)
+    Route::get('/account-created', [KycSubmissionController::class, 'accountCreated'])
+        ->name('account-created');
 
     // Success page (must come before wildcard route)
     Route::get('/success/{submissionId}', [KycSubmissionController::class, 'success'])
@@ -100,4 +106,27 @@ Route::prefix('renew')->name('renewal.')->group(function () {
     // Renewal confirmation page
     Route::get('/{token}/confirmation', [RenewalController::class, 'confirmation'])
         ->name('confirmation');
+});
+
+// Partner Authentication Routes
+Route::prefix('partner')->name('partner.')->group(function () {
+    // Guest routes (only accessible when not logged in)
+    Route::middleware('guest:partner')->group(function () {
+        Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::get('/forgot-password', [AuthController::class, 'showForgotPasswordForm'])->name('password.request');
+        Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+        Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset');
+        Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+    });
+
+    // Protected routes (require authentication)
+    Route::middleware('auth:partner')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/continue-onboarding', [DashboardController::class, 'continueOnboarding'])->name('continue-onboarding');
+        Route::get('/kyc-details', [DashboardController::class, 'viewKycSubmission'])->name('kyc-details');
+        Route::get('/partnership-details', [DashboardController::class, 'viewPartnership'])->name('partnership-details');
+        Route::get('/make-payment', [DashboardController::class, 'makePayment'])->name('make-payment');
+    });
 });

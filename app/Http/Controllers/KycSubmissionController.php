@@ -6,12 +6,17 @@ use App\Models\KycForm;
 use App\Models\KycFormField;
 use App\Models\KycSubmission;
 use App\Models\SystemSetting;
+use App\Models\PartnerUser;
 use App\Mail\KycSubmissionNotification;
+use App\Mail\PartnerWelcomeMail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Exception;
 
@@ -172,44 +177,131 @@ class KycSubmissionController extends Controller
             // Handle file uploads
             $submissionData = $this->handleFileUploads($request, $form->fields, $validatedData);
 
-            // Create KYC submission with onboarding token
-            $submission = $form->submissions()->create([
-                'submission_data' => $submissionData,
-                'status' => KycSubmission::STATUS_PENDING,
-                'verification_status' => KycSubmission::VERIFICATION_NOT_VERIFIED,
-                'onboarding_token' => KycSubmission::generateOnboardingToken(),
-                'onboarding_status' => 'pending',
-            ]);
+            // Extract email from submission data
+            $email = null;
+            $firstName = null;
+            $lastName = null;
+            $phone = null;
 
-            Log::info('KYC submission created successfully', [
-                'form_id' => $form->id,
-                'submission_id' => $submission->id,
-                'onboarding_token' => $submission->onboarding_token,
-                'ip_address' => $request->ip(),
-            ]);
-
-            // Send notification email to admin
-            try {
-                $notificationEmail = SystemSetting::get('kyc_notification_email', config('mail.from.address'));
-
-                if ($notificationEmail) {
-                    Mail::to($notificationEmail)->send(new KycSubmissionNotification($submission));
-
-                    Log::info('KYC submission notification email sent', [
-                        'submission_id' => $submission->id,
-                        'recipient' => $notificationEmail,
-                    ]);
+            foreach ($form->fields as $field) {
+                if ($field->field_type === 'email' && isset($submissionData[$field->field_name])) {
+                    $email = $submissionData[$field->field_name];
                 }
-            } catch (Exception $e) {
-                // Log error but don't fail the submission
-                Log::error('Failed to send KYC submission notification email', [
-                    'submission_id' => $submission->id,
-                    'error' => $e->getMessage(),
-                ]);
+                if (in_array(strtolower($field->field_name), ['first_name', 'firstname']) && isset($submissionData[$field->field_name])) {
+                    $firstName = $submissionData[$field->field_name];
+                }
+                if (in_array(strtolower($field->field_name), ['last_name', 'lastname', 'surname']) && isset($submissionData[$field->field_name])) {
+                    $lastName = $submissionData[$field->field_name];
+                }
+                if ($field->field_type === 'phone' && isset($submissionData[$field->field_name])) {
+                    $phone = $submissionData[$field->field_name];
+                }
             }
 
-            // Redirect to final onboarding page with token
-            return redirect()->route('onboarding.show', ['token' => $submission->onboarding_token]);
+            if (!$email) {
+                return back()
+                    ->withErrors(['error' => 'Email field is required to create your account.'])
+                    ->withInput();
+            }
+
+            // Check if email already exists
+            $existingPartner = PartnerUser::where('email', $email)->first();
+            if ($existingPartner) {
+                return back()
+                    ->withErrors(['error' => 'An account with this email address already exists. Please use a different email or login to your existing account at /partner/login'])
+                    ->withInput();
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // Create KYC submission with onboarding token
+                $submission = $form->submissions()->create([
+                    'submission_data' => $submissionData,
+                    'status' => KycSubmission::STATUS_PENDING,
+                    'verification_status' => KycSubmission::VERIFICATION_NOT_VERIFIED,
+                    'onboarding_token' => KycSubmission::generateOnboardingToken(),
+                    'onboarding_status' => 'pending',
+                ]);
+
+                Log::info('KYC submission created successfully', [
+                    'form_id' => $form->id,
+                    'submission_id' => $submission->id,
+                    'onboarding_token' => $submission->onboarding_token,
+                    'ip_address' => $request->ip(),
+                ]);
+
+                // Generate random password for partner account
+                $plainPassword = Str::random(10);
+
+                // Create partner account
+                $partnerUser = PartnerUser::create([
+                    'kyc_submission_id' => $submission->id,
+                    'email' => $email,
+                    'password' => Hash::make($plainPassword),
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'phone' => $phone,
+                    'status' => 'active',
+                    'kyc_form_completed' => true,
+                    'onboarding_form_completed' => false,
+                    'payment_completed' => false,
+                ]);
+
+                Log::info('Partner account created successfully', [
+                    'partner_user_id' => $partnerUser->id,
+                    'email' => $email,
+                    'submission_id' => $submission->id,
+                ]);
+
+                // Send notification email to admin
+                try {
+                    $notificationEmail = SystemSetting::get('kyc_notification_email', config('mail.from.address'));
+
+                    if ($notificationEmail) {
+                        Mail::to($notificationEmail)->send(new KycSubmissionNotification($submission));
+
+                        Log::info('KYC submission notification email sent', [
+                            'submission_id' => $submission->id,
+                            'recipient' => $notificationEmail,
+                        ]);
+                    }
+                } catch (Exception $e) {
+                    // Log error but don't fail the submission
+                    Log::error('Failed to send KYC submission notification email', [
+                        'submission_id' => $submission->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                // Send welcome email to partner with credentials
+                try {
+                    Mail::to($email)->send(new PartnerWelcomeMail($partnerUser, $plainPassword));
+
+                    Log::info('Partner welcome email sent', [
+                        'partner_user_id' => $partnerUser->id,
+                        'email' => $email,
+                    ]);
+                } catch (Exception $e) {
+                    // Log error but don't fail the submission
+                    Log::error('Failed to send partner welcome email', [
+                        'partner_user_id' => $partnerUser->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+
+                DB::commit();
+
+                // Redirect to success page with credentials
+                return redirect()->route('kyc.account-created', [
+                    'submission' => $submission->id,
+                    'email' => $email,
+                    'password' => $plainPassword,
+                ]);
+            } catch (Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
         } catch (ValidationException $e) {
             return back()
                 ->withErrors($e->errors())
@@ -225,6 +317,48 @@ class KycSubmissionController extends Controller
             return back()
                 ->withErrors(['error' => 'An error occurred while submitting your form. Please try again.'])
                 ->withInput();
+        }
+    }
+
+    /**
+     * Display account created page with credentials
+     *
+     * @param Request $request
+     * @return \Illuminate\View\View|\Illuminate\Http\Response
+     */
+    public function accountCreated(Request $request)
+    {
+        try {
+            $submissionId = $request->get('submission');
+            $email = $request->get('email');
+            $password = $request->get('password');
+
+            if (!$submissionId || !$email || !$password) {
+                abort(404, 'Invalid request');
+            }
+
+            // Find submission
+            $submission = KycSubmission::findOrFail($submissionId);
+
+            Log::info('Account created page viewed', [
+                'submission_id' => $submissionId,
+                'email' => $email,
+                'ip_address' => $request->ip(),
+            ]);
+
+            // Return account created view with credentials
+            return view('kyc.account-created', [
+                'submission' => $submission,
+                'email' => $email,
+                'password' => $password,
+                'loginUrl' => route('partner.login'),
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error displaying account created page', [
+                'error' => $e->getMessage(),
+            ]);
+
+            abort(404, 'Submission not found');
         }
     }
 
