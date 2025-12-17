@@ -128,5 +128,9 @@ Route::prefix('partner')->name('partner.')->group(function () {
         Route::get('/kyc-details', [DashboardController::class, 'viewKycSubmission'])->name('kyc-details');
         Route::get('/partnership-details', [DashboardController::class, 'viewPartnership'])->name('partnership-details');
         Route::get('/make-payment', [DashboardController::class, 'makePayment'])->name('make-payment');
+        Route::get('/change-password', [AuthController::class, 'showChangePasswordForm'])->name('change-password');
+        Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change-password.update');
+        Route::get('/transactions', [DashboardController::class, 'transactionHistory'])->name('transactions');
+        Route::get('/activity', [DashboardController::class, 'activityLog'])->name('activity');
     });
 });

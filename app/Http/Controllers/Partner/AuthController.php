@@ -129,4 +129,39 @@ class AuthController extends Controller
             'email' => [__($status)],
         ]);
     }
+
+    public function showChangePasswordForm()
+    {
+        return view('partner.change-password');
+    }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $partner = Auth::guard('partner')->user();
+
+        // Check if current password is correct
+        if (!Hash::check($request->current_password, $partner->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        // Update password
+        $partner->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        Log::info('Partner password changed', [
+            'partner_id' => $partner->id,
+            'email' => $partner->email,
+        ]);
+
+        return redirect()->route('partner.dashboard')
+            ->with('success', 'Your password has been changed successfully.');
+    }
 }
