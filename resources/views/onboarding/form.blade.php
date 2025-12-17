@@ -286,6 +286,7 @@
                 </div>
 
                 <!-- Solar Power Option -->
+                @if($solarPowerEnabled)
                 <div x-show="selectedModel" x-cloak class="mb-6" x-data="{ solarPower: '{{ old('solar_power', $finalOnboarding->solar_power ?? 'no') }}', solarPowerAmount: {{ $solarPowerAmount ?? 0 }} }">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $solarPowerTitle }}</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -349,6 +350,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- Submit Button -->
                 <div class="flex items-center justify-between pt-6 border-t border-gray-200">

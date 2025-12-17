@@ -65,6 +65,13 @@ class SystemSettingsSeeder extends Seeder
                 'description' => 'Solar power package amount',
             ],
             [
+                'key' => 'solar_power_enabled',
+                'value' => 'true',
+                'type' => 'boolean',
+                'group' => 'onboarding',
+                'description' => 'Enable/Disable solar power section on onboarding form',
+            ],
+            [
                 'key' => 'solar_power_title',
                 'value' => 'Do you want solar power?',
                 'type' => 'text',

@@ -54,6 +54,7 @@ class SystemSettingResource extends Resource
                             ->options([
                                 'text' => 'Text',
                                 'number' => 'Number',
+                                'boolean' => 'Boolean',
                                 'textarea' => 'Textarea',
                                 'json' => 'JSON',
                             ])
@@ -72,6 +73,15 @@ class SystemSettingResource extends Resource
                             ->label('Value')
                             ->visible(fn ($get) => in_array($get('type'), ['text', 'number']))
                             ->numeric(fn ($get) => $get('type') === 'number')
+                            ->columnSpanFull(),
+
+                        FormFields\Toggle::make('value')
+                            ->label('Enabled')
+                            ->visible(fn ($get) => $get('type') === 'boolean')
+                            ->onColor('success')
+                            ->offColor('danger')
+                            ->formatStateUsing(fn ($state) => filter_var($state, FILTER_VALIDATE_BOOLEAN))
+                            ->dehydrateStateUsing(fn ($state) => $state ? 'true' : 'false')
                             ->columnSpanFull(),
 
                         FormFields\Textarea::make('value')
@@ -116,10 +126,22 @@ class SystemSettingResource extends Resource
                     ->badge()
                     ->sortable(),
 
+                Tables\Columns\ToggleColumn::make('value')
+                    ->label('Value')
+                    ->visible(fn ($record) => $record && $record->type === 'boolean')
+                    ->onColor('success')
+                    ->offColor('danger')
+                    ->getStateUsing(fn ($record) => filter_var($record->value, FILTER_VALIDATE_BOOLEAN))
+                    ->updateStateUsing(function ($record, $state) {
+                        $record->value = $state ? 'true' : 'false';
+                        $record->save();
+                    }),
+
                 Tables\Columns\TextColumn::make('value')
                     ->limit(50)
                     ->searchable()
-                    ->wrap(),
+                    ->wrap()
+                    ->visible(fn ($record) => !$record || $record->type !== 'boolean'),
 
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
@@ -144,6 +166,7 @@ class SystemSettingResource extends Resource
                     ->options([
                         'text' => 'Text',
                         'number' => 'Number',
+                        'boolean' => 'Boolean',
                         'textarea' => 'Textarea',
                         'json' => 'JSON',
                     ]),

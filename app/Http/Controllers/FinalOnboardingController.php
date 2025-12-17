@@ -59,6 +59,7 @@ class FinalOnboardingController extends Controller
 
             // Get system settings
             $signupFee = SystemSetting::get('signup_fee_amount', 5000);
+            $solarPowerEnabled = filter_var(SystemSetting::get('solar_power_enabled', 'true'), FILTER_VALIDATE_BOOLEAN);
             $solarPowerAmount = SystemSetting::get('solar_power_amount', 0);
             $solarPowerTitle = SystemSetting::get('solar_power_title', 'Do you want solar power?');
             $solarPowerDescription = SystemSetting::get('solar_power_description', 'Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.');
@@ -83,6 +84,7 @@ class FinalOnboardingController extends Controller
                 'onboardingForm' => $onboardingForm,
                 'partnershipModels' => $partnershipModels,
                 'signupFee' => $signupFee,
+                'solarPowerEnabled' => $solarPowerEnabled,
                 'solarPowerAmount' => $solarPowerAmount,
                 'solarPowerTitle' => $solarPowerTitle,
                 'solarPowerDescription' => $solarPowerDescription,
