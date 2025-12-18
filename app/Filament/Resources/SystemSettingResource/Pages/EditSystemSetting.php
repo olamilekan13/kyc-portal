@@ -56,13 +56,15 @@ class EditSystemSetting extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // For image type, FileUpload returns the path as string or array
-        // Ensure we store it as a string in the database
+        // For image type, FileUpload returns the path as string
+        // Ensure we store it as a string with the correct directory path
         if (isset($this->record) && $this->record->type === 'image') {
             if (isset($data['value'])) {
-                // If it's an array (from FileUpload), get the first item
-                if (is_array($data['value'])) {
-                    $data['value'] = $data['value'][0] ?? '';
+                // FileUpload stores files in 'system-settings/' directory
+                // The value should already include the directory prefix
+                // If it's just a filename, prepend the directory
+                if (is_string($data['value']) && !str_starts_with($data['value'], 'system-settings/')) {
+                    $data['value'] = 'system-settings/' . $data['value'];
                 }
             }
         }

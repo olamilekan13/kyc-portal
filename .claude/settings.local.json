@@ -37,7 +37,8 @@
       "Bash(php fix_all_partner_payments.php:*)",
       "Bash(if not exist \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\" mkdir \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\")",
       "Bash(php migrate_solar_image.php:*)",
-      "Bash(del:*)"
+      "Bash(del:*)",
+      "Bash(php check_solar_image.php:*)"
     ],
     "deny": [],
     "ask": []

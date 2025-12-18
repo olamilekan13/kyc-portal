@@ -93,6 +93,94 @@ class ViewKycSubmission extends ViewRecord
                     }
                 }),
 
+            Actions\Action::make('approve_payment')
+                ->label('Approve Payment')
+                ->icon('heroicon-o-check-circle')
+                ->color('success')
+                ->visible(fn (KycSubmission $record): bool =>
+                    $record->finalOnboarding &&
+                    $record->finalOnboarding->payment_status === 'pending' &&
+                    $record->finalOnboarding->payment_method !== null
+                )
+                ->requiresConfirmation()
+                ->modalHeading('Approve Payment')
+                ->modalDescription('Are you sure you want to approve this payment? This will activate the partnership.')
+                ->action(function (KycSubmission $record) {
+                    $finalOnboarding = $record->finalOnboarding;
+                    if (!$finalOnboarding) return;
+
+                    $durationMonths = $finalOnboarding->duration_months ?? 12;
+
+                    $finalOnboarding->update([
+                        'payment_status' => 'completed',
+                        'signup_fee_paid' => true,
+                        'model_fee_paid' => true,
+                        'signup_fee_paid_at' => now(),
+                        'model_fee_paid_at' => now(),
+                        'partnership_start_date' => now()->toDateString(),
+                        'partnership_end_date' => now()->addMonths($durationMonths)->toDateString(),
+                        'renewal_status' => 'active',
+                    ]);
+
+                    // Update onboarding status
+                    $record->update([
+                        'onboarding_status' => 'completed',
+                    ]);
+
+                    // Update partner user payment_completed flag
+                    if ($record->partnerUser) {
+                        $record->partnerUser->update([
+                            'payment_completed' => true,
+                        ]);
+                    }
+
+                    Notification::make()
+                        ->title('Payment approved')
+                        ->body("Payment approved and partnership activated until {$finalOnboarding->partnership_end_date}")
+                        ->success()
+                        ->send();
+                }),
+
+            Actions\Action::make('reject_payment')
+                ->label('Reject Payment')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->visible(fn (KycSubmission $record): bool =>
+                    $record->finalOnboarding &&
+                    $record->finalOnboarding->payment_status === 'pending' &&
+                    $record->finalOnboarding->payment_method !== null
+                )
+                ->requiresConfirmation()
+                ->modalHeading('Reject Payment')
+                ->modalDescription('Are you sure you want to reject this payment? This will mark the payment as failed.')
+                ->action(function (KycSubmission $record) {
+                    $finalOnboarding = $record->finalOnboarding;
+                    if (!$finalOnboarding) return;
+
+                    $finalOnboarding->update([
+                        'payment_status' => 'failed',
+                    ]);
+
+                    Notification::make()
+                        ->title('Payment rejected')
+                        ->body('Payment has been rejected.')
+                        ->warning()
+                        ->send();
+                }),
+
+            Actions\Action::make('view_payment_proof')
+                ->label('View Payment Proof')
+                ->icon('heroicon-o-photo')
+                ->color('info')
+                ->visible(fn (KycSubmission $record): bool =>
+                    $record->finalOnboarding &&
+                    $record->finalOnboarding->payment_proof !== null
+                )
+                ->url(fn (KycSubmission $record): string =>
+                    Storage::disk('public')->url($record->finalOnboarding->payment_proof)
+                )
+                ->openUrlInNewTab(),
+
             Actions\DeleteAction::make()
                 ->requiresConfirmation()
                 ->modalHeading('Delete Submission')
