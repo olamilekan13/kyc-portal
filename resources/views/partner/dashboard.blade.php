@@ -183,6 +183,12 @@
                                     <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
                                 </svg>
                             </div>
+                        @elseif ($finalOnboarding && $finalOnboarding->payment_status === 'pending')
+                            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100">
+                                <svg class="w-5 h-5 text-yellow-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
                         @elseif ($partner->onboarding_form_completed)
                             <div class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
                                 <span class="text-sm font-medium text-blue-600">3</span>
@@ -199,7 +205,9 @@
                                 <h3 class="text-sm font-medium text-gray-900">Payment</h3>
                                 <p class="text-sm text-gray-500">
                                     @if ($partner->payment_completed)
-                                        Payment completed
+                                        Payment completed and approved
+                                    @elseif ($finalOnboarding && $finalOnboarding->payment_status === 'pending')
+                                        Payment submitted - Awaiting admin approval
                                     @elseif ($partner->onboarding_form_completed)
                                         Complete your payment
                                     @else
@@ -207,11 +215,18 @@
                                     @endif
                                 </p>
                             </div>
-                            @if ($partner->onboarding_form_completed && !$partner->payment_completed)
+                            @if ($partner->onboarding_form_completed && !$partner->payment_completed && (!$finalOnboarding || $finalOnboarding->payment_status !== 'pending'))
                                 <a href="{{ route('partner.make-payment') }}"
                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
                                     Make Payment
                                 </a>
+                            @elseif ($finalOnboarding && $finalOnboarding->payment_status === 'pending')
+                                <span class="inline-flex items-center px-4 py-2 border border-yellow-300 text-sm font-medium rounded-md text-yellow-800 bg-yellow-50">
+                                    <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+                                    </svg>
+                                    Pending Approval
+                                </span>
                             @endif
                         </div>
                     </div>
@@ -342,6 +357,34 @@
                     <span class="absolute inset-0" aria-hidden="true"></span>
                     <p class="text-sm font-medium text-gray-900">Activity Log</p>
                     <p class="text-sm text-gray-500">Track your account activities</p>
+                </div>
+            </a>
+
+            <a href="{{ route('partner.orders.index') }}"
+               class="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3 hover:border-gray-400 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                <div class="flex-shrink-0">
+                    <svg class="h-8 w-8 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <span class="absolute inset-0" aria-hidden="true"></span>
+                    <p class="text-sm font-medium text-gray-900">My Orders</p>
+                    <p class="text-sm text-gray-500">View your partnership orders</p>
+                </div>
+            </a>
+
+            <a href="{{ route('partner.orders.create') }}"
+               class="relative rounded-lg border-2 border-blue-500 bg-blue-50 px-6 py-5 shadow-sm flex items-center space-x-3 hover:bg-blue-100 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                <div class="flex-shrink-0">
+                    <svg class="h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <span class="absolute inset-0" aria-hidden="true"></span>
+                    <p class="text-sm font-medium text-blue-900">Create New Order</p>
+                    <p class="text-sm text-blue-700">Add another partnership model</p>
                 </div>
             </a>
         </div>

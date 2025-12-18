@@ -57,6 +57,16 @@ class PartnerUser extends Authenticatable
         );
     }
 
+    public function orders()
+    {
+        return $this->hasMany(PartnerOrder::class);
+    }
+
+    public function activeOrders()
+    {
+        return $this->hasMany(PartnerOrder::class)->where('status', 'active');
+    }
+
     public function isActive()
     {
         return $this->status === 'active';

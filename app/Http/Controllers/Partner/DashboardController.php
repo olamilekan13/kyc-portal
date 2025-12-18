@@ -104,7 +104,7 @@ class DashboardController extends Controller
             'submission_id' => $kycSubmission->id,
         ]);
 
-        return redirect()->route('payment.show', ['token' => $kycSubmission->onboarding_token]);
+        return redirect()->route('onboarding.payment', ['token' => $kycSubmission->onboarding_token]);
     }
 
     public function transactionHistory()

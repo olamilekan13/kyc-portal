@@ -32,7 +32,10 @@
       "Bash(php fix_signup_fee_key.php:*)",
       "Bash(php export_settings.php:*)",
       "Bash(git mv:*)",
-      "Bash(temp_log.txt)"
+      "Bash(temp_log.txt)",
+      "Bash(php fix_partner_payment.php:*)",
+      "Bash(php fix_all_partner_payments.php:*)",
+      "Bash(if not exist \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\" mkdir \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\")"
     ],
     "deny": [],
     "ask": []

@@ -69,10 +69,11 @@ class SystemSettingResource extends Resource
                             ->columnSpanFull(),
 
                         FormFields\TextInput::make('value')
-                            ->required()
                             ->label('Value')
                             ->visible(fn ($get) => in_array($get('type'), ['text', 'number']))
                             ->numeric(fn ($get) => $get('type') === 'number')
+                            ->required(fn ($get) => in_array($get('type'), ['text', 'number']))
+                            ->dehydrated(fn ($get) => in_array($get('type'), ['text', 'number']))
                             ->columnSpanFull(),
 
                         FormFields\Toggle::make('value')
@@ -81,22 +82,25 @@ class SystemSettingResource extends Resource
                             ->onColor('success')
                             ->offColor('danger')
                             ->formatStateUsing(fn ($state) => filter_var($state, FILTER_VALIDATE_BOOLEAN))
+                            ->dehydrated(fn ($get) => $get('type') === 'boolean')
                             ->dehydrateStateUsing(fn ($state) => $state ? 'true' : 'false')
                             ->columnSpanFull(),
 
                         FormFields\Textarea::make('value')
-                            ->required()
                             ->label('Value')
                             ->visible(fn ($get) => $get('type') === 'textarea')
                             ->rows(4)
+                            ->required(fn ($get) => $get('type') === 'textarea')
+                            ->dehydrated(fn ($get) => $get('type') === 'textarea')
                             ->columnSpanFull(),
 
                         FormFields\Textarea::make('value')
-                            ->required()
                             ->label('Value (JSON)')
                             ->visible(fn ($get) => $get('type') === 'json')
                             ->rows(6)
                             ->helperText('Enter valid JSON')
+                            ->required(fn ($get) => $get('type') === 'json')
+                            ->dehydrated(fn ($get) => $get('type') === 'json')
                             ->columnSpanFull(),
                     ])
                     ->columns(2),

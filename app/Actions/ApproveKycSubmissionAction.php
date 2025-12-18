@@ -273,6 +273,13 @@ MESSAGE;
                 'model_fee_paid_at' => $finalOnboarding->model_fee_paid_at ?? now(),
             ]);
 
+            // Update partner's payment_completed flag
+            if ($submission->partnerUser) {
+                $submission->partnerUser->update([
+                    'payment_completed' => true,
+                ]);
+            }
+
             // Activate partnership if not already activated
             if (!$finalOnboarding->partnership_start_date) {
                 $finalOnboarding->activatePartnership();

@@ -46,6 +46,7 @@ class PartnershipModelResource extends Resource
                                 'bulletList',
                                 'orderedList',
                                 'link',
+                                'table',
                                 'h2',
                                 'h3',
                                 'undo',

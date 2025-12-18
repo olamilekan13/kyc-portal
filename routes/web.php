@@ -132,5 +132,14 @@ Route::prefix('partner')->name('partner.')->group(function () {
         Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change-password.update');
         Route::get('/transactions', [DashboardController::class, 'transactionHistory'])->name('transactions');
         Route::get('/activity', [DashboardController::class, 'activityLog'])->name('activity');
+
+        // Orders
+        Route::get('/orders', [\App\Http\Controllers\Partner\OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/create', [\App\Http\Controllers\Partner\OrderController::class, 'create'])->name('orders.create');
+        Route::post('/orders', [\App\Http\Controllers\Partner\OrderController::class, 'store'])->name('orders.store');
+        Route::get('/orders/{order}', [\App\Http\Controllers\Partner\OrderController::class, 'show'])->name('orders.show');
+        Route::get('/orders/{order}/payment', [\App\Http\Controllers\Partner\OrderController::class, 'payment'])->name('orders.payment');
+        Route::post('/orders/{order}/payment/bank-transfer', [\App\Http\Controllers\Partner\OrderController::class, 'processBankTransfer'])->name('orders.payment.bank-transfer');
+        Route::get('/orders/{order}/payment/verify', [\App\Http\Controllers\Partner\OrderController::class, 'verifyPaystackPayment'])->name('orders.payment.verify');
     });
 });

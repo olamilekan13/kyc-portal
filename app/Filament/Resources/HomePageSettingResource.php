@@ -61,6 +61,7 @@ class HomePageSettingResource extends Resource
                                 'orderedList',
                                 'redo',
                                 'strike',
+                                'table',
                                 'underline',
                                 'undo',
                             ])
@@ -69,7 +70,7 @@ class HomePageSettingResource extends Resource
                             ->fileAttachmentsVisibility('public')
                             ->columnSpanFull()
                             ->required(false)
-                            ->helperText('Use the rich editor to format your content with headings, lists, links, blockquotes, code blocks, and more. You can also attach files.'),
+                            ->helperText('Use the rich editor to format your content with headings, lists, links, blockquotes, code blocks, tables, and more. You can also attach files.'),
                     ])
                     ->columns(2),
 
