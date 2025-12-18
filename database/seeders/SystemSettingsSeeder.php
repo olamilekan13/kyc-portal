@@ -86,6 +86,13 @@ class SystemSettingsSeeder extends Seeder
                 'description' => 'Description text for solar power package displayed when user selects Yes',
             ],
             [
+                'key' => 'solar_power_image',
+                'value' => 'images/solar_power.jpg',
+                'type' => 'text',
+                'group' => 'onboarding',
+                'description' => 'Image path for solar power package (relative to public directory, e.g., images/solar_power.jpg)',
+            ],
+            [
                 'key' => 'partnership_fee_label',
                 'value' => 'Partnership Fee',
                 'type' => 'text',

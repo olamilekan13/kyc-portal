@@ -107,7 +107,7 @@
                     <div>
                         <p class="font-semibold text-gray-900">Solar Power</p>
                         <div class="flex items-center mt-2 space-x-3">
-                            <img src="{{ asset('images/solar_power.jpg') }}" alt="Solar Power" class="w-16 h-16 object-cover rounded-lg shadow-sm">
+                            <img src="{{ asset(\App\Models\SystemSetting::get('solar_power_image', 'images/solar_power.jpg')) }}" alt="Solar Power" class="w-16 h-16 object-cover rounded-lg shadow-sm">
                             <p class="text-sm text-gray-600">Clean energy solution</p>
                         </div>
                     </div>
