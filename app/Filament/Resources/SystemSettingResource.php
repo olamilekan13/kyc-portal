@@ -57,6 +57,7 @@ class SystemSettingResource extends Resource
                                 'boolean' => 'Boolean',
                                 'textarea' => 'Textarea',
                                 'json' => 'JSON',
+                                'image' => 'Image',
                             ])
                             ->default('text')
                             ->reactive()
@@ -102,6 +103,33 @@ class SystemSettingResource extends Resource
                             ->required(fn ($get) => $get('type') === 'json')
                             ->dehydrated(fn ($get) => $get('type') === 'json')
                             ->columnSpanFull(),
+
+                        FormFields\FileUpload::make('value')
+                            ->label('Image')
+                            ->visible(fn ($get) => $get('type') === 'image')
+                            ->image()
+                            ->disk('public')
+                            ->directory('system-settings')
+                            ->visibility('public')
+                            ->imageEditor()
+                            ->imageEditorAspectRatios([
+                                null,
+                                '16:9',
+                                '4:3',
+                                '1:1',
+                            ])
+                            ->maxSize(2048)
+                            ->helperText('Upload an image file (max 2MB). Recommended formats: JPG, PNG')
+                            ->required(fn ($get) => $get('type') === 'image')
+                            ->dehydrated(fn ($get) => $get('type') === 'image')
+                            ->formatStateUsing(function ($state) {
+                                // FileUpload expects null or a string path, not empty string
+                                if (empty($state)) {
+                                    return null;
+                                }
+                                return $state;
+                            })
+                            ->columnSpanFull(),
                     ])
                     ->columns(2),
             ]);
@@ -141,11 +169,17 @@ class SystemSettingResource extends Resource
                         $record->save();
                     }),
 
+                Tables\Columns\ImageColumn::make('value')
+                    ->label('Image')
+                    ->disk('public')
+                    ->visible(fn ($record) => $record && $record->type === 'image')
+                    ->size(60),
+
                 Tables\Columns\TextColumn::make('value')
                     ->limit(50)
                     ->searchable()
                     ->wrap()
-                    ->visible(fn ($record) => !$record || $record->type !== 'boolean'),
+                    ->visible(fn ($record) => !$record || !in_array($record->type, ['boolean', 'image'])),
 
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
@@ -173,6 +207,7 @@ class SystemSettingResource extends Resource
                         'boolean' => 'Boolean',
                         'textarea' => 'Textarea',
                         'json' => 'JSON',
+                        'image' => 'Image',
                     ]),
             ])
             ->actions([

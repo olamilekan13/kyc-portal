@@ -35,7 +35,9 @@
       "Bash(temp_log.txt)",
       "Bash(php fix_partner_payment.php:*)",
       "Bash(php fix_all_partner_payments.php:*)",
-      "Bash(if not exist \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\" mkdir \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\")"
+      "Bash(if not exist \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\" mkdir \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\")",
+      "Bash(php migrate_solar_image.php:*)",
+      "Bash(del:*)"
     ],
     "deny": [],
     "ask": []

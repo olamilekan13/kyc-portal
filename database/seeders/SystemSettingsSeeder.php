@@ -88,9 +88,9 @@ class SystemSettingsSeeder extends Seeder
             [
                 'key' => 'solar_power_image',
                 'value' => 'images/solar_power.jpg',
-                'type' => 'text',
+                'type' => 'image',
                 'group' => 'onboarding',
-                'description' => 'Image path for solar power package (relative to public directory, e.g., images/solar_power.jpg)',
+                'description' => 'Image for solar power package',
             ],
             [
                 'key' => 'partnership_fee_label',
