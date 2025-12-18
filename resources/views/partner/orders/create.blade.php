@@ -97,7 +97,7 @@
 
                     @if($solarPowerImage)
                         <div class="mb-4">
-                            <img src="{{ Storage::disk('public')->url($solarPowerImage) }}"
+                            <img src="{{ asset('storage/' . $solarPowerImage) }}"
                                  alt="Solar Power Package"
                                  class="w-full h-48 object-cover rounded-lg shadow-sm">
                         </div>

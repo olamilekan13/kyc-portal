@@ -115,7 +115,7 @@
                                            class="text-blue-600 hover:text-blue-900">
                                             View Details
                                         </a>
-                                        @if($order->payment_status === 'pending' && !$order->payment_proof)
+                                        @if($order->payment_status === 'pending' && !$order->payment_method)
                                             <a href="{{ route('partner.orders.payment', $order) }}"
                                                class="ml-3 text-green-600 hover:text-green-900">
                                                 Make Payment

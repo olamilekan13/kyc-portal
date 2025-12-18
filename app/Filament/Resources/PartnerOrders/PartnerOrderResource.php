@@ -51,13 +51,6 @@ class PartnerOrderResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): Builder
-    {
-        // Only show orders that have been paid (either via bank transfer with proof uploaded or via Paystack)
-        return parent::getEloquentQuery()
-            ->where('payment_status', 'completed');
-    }
-
     public static function canCreate(): bool
     {
         return false;

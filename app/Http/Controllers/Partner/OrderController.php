@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Partner;
 
 use App\Http\Controllers\Controller;
 use App\Mail\NewPartnerOrderMail;
+use App\Mail\OrderPaymentSubmissionMail;
 use App\Models\PartnerOrder;
 use App\Models\PartnershipModel;
 use App\Models\SystemSetting;
@@ -200,6 +201,21 @@ class OrderController extends Controller
                 'order_number' => $order->order_number,
                 'has_proof' => $proofPath !== null,
             ]);
+
+            // Send email notification to admin
+            try {
+                $adminEmail = SystemSetting::get('admin_notification_email', config('mail.from.address'));
+                Mail::to($adminEmail)->send(new OrderPaymentSubmissionMail($order));
+                Log::info('Order payment submission email sent to admin', [
+                    'order_id' => $order->id,
+                    'admin_email' => $adminEmail,
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to send order payment submission email', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
 
             $message = $proofPath
                 ? 'Payment proof submitted successfully. Your order will be activated once payment is verified.'

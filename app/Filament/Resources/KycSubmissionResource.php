@@ -346,6 +346,13 @@ class KycSubmissionResource extends Resource
                             'onboarding_status' => 'completed',
                         ]);
 
+                        // Update partner user payment_completed flag
+                        if ($record->partnerUser) {
+                            $record->partnerUser->update([
+                                'payment_completed' => true,
+                            ]);
+                        }
+
                         \Filament\Notifications\Notification::make()
                             ->title('Payment approved')
                             ->body("Payment approved and partnership activated until {$finalOnboarding->partnership_end_date}")

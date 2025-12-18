@@ -126,6 +126,16 @@ class KycSubmission extends Model
     }
 
     /**
+     * Get the partner user for this submission.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function partnerUser()
+    {
+        return $this->hasOne(PartnerUser::class);
+    }
+
+    /**
      * Generate a unique onboarding token.
      *
      * @return string
