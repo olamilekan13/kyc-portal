@@ -149,12 +149,27 @@ class SystemSettingResource extends Resource
                             ->helperText('Upload an image file (max 2MB). Recommended formats: JPG, PNG')
                             ->required(fn ($get) => $get('type') === 'image')
                             ->dehydrated(fn ($get) => $get('type') === 'image')
+                            ->saveUploadedFileUsing(function ($file, $record) {
+                                // Custom save logic to ensure we get the full path
+                                $filename = $file->hashName();
+                                $path = $file->storeAs('system-settings', $filename, 'public');
+                                \Log::info('FileUpload saveUploadedFileUsing', [
+                                    'filename' => $filename,
+                                    'path' => $path,
+                                    'record_id' => $record?->id,
+                                ]);
+                                return $path;
+                            })
                             ->formatStateUsing(function ($state) {
                                 // FileUpload expects null or a string path, not empty string
                                 if (empty($state)) {
                                     return null;
                                 }
-                                return $state;
+                                // Only return valid file paths
+                                if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $state)) {
+                                    return $state;
+                                }
+                                return null;
                             })
                             ->columnSpanFull(),
                     ])

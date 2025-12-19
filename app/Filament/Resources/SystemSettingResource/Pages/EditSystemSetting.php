@@ -63,7 +63,19 @@ class EditSystemSetting extends EditRecord
                 // Clear the 'value' field to prevent it from being populated for richtext
                 $data['value'] = null;
             }
-            // For other types, ensure value is properly set as a string
+            // For image type, validate the value before filling
+            elseif ($type === 'image') {
+                // FileUpload component expects a valid file path or null
+                // If the value is corrupted (like just a number), set it to null
+                if ($value && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $value)) {
+                    // Value looks valid (has file extension)
+                    $data['value'] = $value;
+                } else {
+                    // Value is corrupted or missing - set to null so FileUpload can work
+                    $data['value'] = null;
+                }
+            }
+            // For other types (text, number, textarea, json, boolean), ensure value is properly set
             else {
                 // Force override whatever was in $data['value'] with the actual database value
                 $data['value'] = $value;
@@ -92,8 +104,47 @@ class EditSystemSetting extends EditRecord
             }
         }
 
-        // For image type, FileUpload automatically handles the path correctly
-        // No need to manipulate it - Filament stores the full path with directory
+        // For image type, validate and fix the value if needed
+        if (isset($this->record) && $this->record->type === 'image') {
+            \Log::info('Image upload - Before validation', [
+                'key' => $this->record->key,
+                'data_value' => $data['value'] ?? 'NOT SET',
+                'is_string' => is_string($data['value'] ?? null),
+            ]);
+
+            if (isset($data['value'])) {
+                // Filament FileUpload can send various values:
+                // - Full path (e.g., "system-settings/filename.jpg") when a NEW file is uploaded
+                // - Record ID (e.g., "1") when the form is saved without uploading
+                // - null when the file is removed
+
+                // Check if the value is a valid file path
+                if (preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $data['value'])) {
+                    // Valid file path - this is a new upload, use it
+                    \Log::info('Image value is valid (new upload)', [
+                        'key' => $this->record->key,
+                        'value' => $data['value'],
+                    ]);
+                } else {
+                    // Value is NOT a valid file path (might be ID or corrupted)
+                    // Keep the existing value instead
+                    $existingValue = $this->record->getOriginal('value');
+
+                    \Log::warning('Image value invalid - preserving existing', [
+                        'key' => $this->record->key,
+                        'invalid_value' => $data['value'],
+                        'existing_value' => $existingValue,
+                    ]);
+
+                    // Use existing value if valid, otherwise set to null
+                    if ($existingValue && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $existingValue)) {
+                        $data['value'] = $existingValue;
+                    } else {
+                        $data['value'] = null;
+                    }
+                }
+            }
+        }
 
         return $data;
     }
