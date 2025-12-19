@@ -123,3 +123,8 @@ Once the type is corrected:
 - Check directory permissions on `storage/app/public`
 - Check `.env` has `FILESYSTEM_DISK=public`
 - Check PHP upload limits in `php.ini`: `upload_max_filesize` and `post_max_size`
+
+**Image uploaded but not displaying?**
+- See [SOLAR_IMAGE_PATH_FIX.md](SOLAR_IMAGE_PATH_FIX.md) for image path display issues
+- Ensure `php artisan storage:link` has been run
+- Check browser console for 404 errors on the image URL

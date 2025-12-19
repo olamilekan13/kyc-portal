@@ -338,7 +338,14 @@
                     <!-- Solar Power Details (shown when Yes is selected) -->
                     <div x-show="solarPower === 'yes'" x-cloak class="mt-4 p-5 bg-gradient-to-r from-green-50 to-yellow-50 border border-green-200 rounded-xl">
                         <div class="flex items-start space-x-4">
-                            <img src="{{ asset(\App\Models\SystemSetting::get('solar_power_image', 'images/solar_power.jpg')) }}" alt="Solar Power" class="w-32 h-32 object-cover rounded-lg shadow-lg">
+                            @php
+                                $solarImage = \App\Models\SystemSetting::get('solar_power_image', 'images/solar_power.jpg');
+                                // If image is from Filament upload (stored in public disk), use storage path
+                                $imagePath = str_starts_with($solarImage, 'system-settings/')
+                                    ? asset('storage/' . $solarImage)
+                                    : asset($solarImage);
+                            @endphp
+                            <img src="{{ $imagePath }}" alt="Solar Power" class="w-32 h-32 object-cover rounded-lg shadow-lg">
                             <div class="flex-1">
                                 <h4 class="text-lg font-bold text-gray-900 mb-2">{{ \App\Models\SystemSetting::get('solar_power_title', 'Solar Power Package') }}</h4>
                                 <p class="text-sm text-gray-700 mb-3">{{ $solarPowerDescription ?? 'Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.' }}</p>

@@ -59,7 +59,7 @@
                     @foreach($partnershipModels as $model)
                         <label class="relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none"
                                :class="selectedModel === {{ $model->id }} ? 'border-blue-500 ring-2 ring-blue-500' : 'border-gray-300'"
-                               @click="selectModel({{ $model->id }}, {{ $model->price }}, '{{ $model->name }}')">
+                               @click="selectModel({{ $model->id }}, {{ $model->price }}, '{{ $model->name }}', {{ $model->duration_months }})">
                             <input type="radio"
                                    name="partnership_model_id"
                                    value="{{ $model->id }}"
@@ -97,7 +97,13 @@
 
                     @if($solarPowerImage)
                         <div class="mb-4">
-                            <img src="{{ asset('storage/' . $solarPowerImage) }}"
+                            @php
+                                // If image is from Filament upload (stored in public disk), use storage path
+                                $imagePath = str_starts_with($solarPowerImage, 'system-settings/')
+                                    ? asset('storage/' . $solarPowerImage)
+                                    : asset($solarPowerImage);
+                            @endphp
+                            <img src="{{ $imagePath }}"
                                  alt="Solar Power Package"
                                  class="w-full h-48 object-cover rounded-lg shadow-sm">
                         </div>
@@ -130,8 +136,9 @@
                         <input type="number"
                                name="duration_months"
                                min="1"
-                               value="12"
-                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                               x-model="durationMonths"
+                               readonly
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 cursor-not-allowed text-gray-700">
                     </label>
                 </div>
             </div>
@@ -190,14 +197,16 @@ function orderForm() {
         selectedModel: null,
         selectedModelName: '',
         modelPrice: 0,
+        durationMonths: 12,
         solarPower: false,
         solarPowerAmount: {{ $solarPowerAmount }},
         totalAmount: 0,
 
-        selectModel(id, price, name) {
+        selectModel(id, price, name, duration) {
             this.selectedModel = id;
             this.modelPrice = price;
             this.selectedModelName = name;
+            this.durationMonths = duration || 12;
             this.updateTotal();
         },
 
