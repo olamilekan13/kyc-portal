@@ -58,7 +58,7 @@ class OrderController extends Controller
 
         $request->validate([
             'partnership_model_id' => 'required|exists:partnership_models,id',
-            'solar_power' => 'nullable|boolean',
+            'solar_power' => 'nullable|in:yes,no',
             'duration_months' => 'nullable|integer|min:1',
         ]);
 
@@ -66,7 +66,7 @@ class OrderController extends Controller
             DB::beginTransaction();
 
             $partnershipModel = PartnershipModel::findOrFail($request->partnership_model_id);
-            $solarPower = $request->boolean('solar_power');
+            $solarPower = $request->input('solar_power') === 'yes';
             $solarPowerAmount = $solarPower ? SystemSetting::get('solar_power_amount', 0) : 0;
 
             // No signup fee for additional orders

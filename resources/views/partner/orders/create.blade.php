@@ -92,39 +92,79 @@
             <!-- Solar Power Option -->
             @if($solarPowerEnabled)
                 <div x-show="selectedModel" x-cloak class="bg-white shadow-md rounded-lg p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-2">{{ $solarPowerTitle }}</h2>
-                    <div class="text-sm text-gray-600 mb-4 prose prose-sm max-w-none">
-                        {!! $solarPowerDescription !!}
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">{{ $solarPowerTitle }}</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <!-- Yes Option -->
+                        <label class="relative cursor-pointer">
+                            <input
+                                type="radio"
+                                name="solar_power"
+                                value="yes"
+                                x-model="solarPower"
+                                @change="updateTotal"
+                                class="peer sr-only"
+                            />
+                            <div class="border-2 border-gray-200 rounded-xl p-5 transition-all hover:border-green-400 peer-checked:border-green-600 peer-checked:ring-2 peer-checked:ring-green-200 peer-checked:bg-green-50">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold text-gray-900">Yes</span>
+                                    <div class="peer-checked:block hidden">
+                                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600">Include Solar Power Generator in my package</p>
+                            </div>
+                        </label>
+
+                        <!-- No Option -->
+                        <label class="relative cursor-pointer">
+                            <input
+                                type="radio"
+                                name="solar_power"
+                                value="no"
+                                x-model="solarPower"
+                                @change="updateTotal"
+                                class="peer sr-only"
+                            />
+                            <div class="border-2 border-gray-200 rounded-xl p-5 transition-all hover:border-gray-400 peer-checked:border-gray-600 peer-checked:ring-2 peer-checked:ring-gray-200 peer-checked:bg-gray-50">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="font-semibold text-gray-900">No</span>
+                                    <div class="peer-checked:block hidden">
+                                        <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <p class="text-sm text-gray-600">Continue without Solar Power Generator in my package</p>
+                            </div>
+                        </label>
                     </div>
 
-                    @if($solarPowerImage)
-                        <div class="mb-4">
+                    <!-- Solar Power Details (shown when Yes is selected) -->
+                    <div x-show="solarPower === 'yes'" x-cloak class="mt-4 p-5 bg-gradient-to-r from-green-50 to-yellow-50 border border-green-200 rounded-xl">
+                        <div class="flex items-start space-x-4">
                             @php
                                 // If image is from Filament upload (stored in public disk), use storage path
                                 $imagePath = str_starts_with($solarPowerImage, 'system-settings/')
                                     ? asset('storage/' . $solarPowerImage)
                                     : asset($solarPowerImage);
                             @endphp
-                            <img src="{{ $imagePath }}"
-                                 alt="Solar Power Package"
-                                 class="w-full h-48 object-cover rounded-lg shadow-sm">
+                            @if($solarPowerImage)
+                                <img src="{{ $imagePath }}" alt="Solar Power" class="w-32 h-32 object-cover rounded-lg shadow-lg">
+                            @endif
+                            <div class="flex-1">
+                                <h4 class="text-lg font-bold text-gray-900 mb-2">{{ \App\Models\SystemSetting::get('solar_power_title', 'Solar Power Package') }}</h4>
+                                <div class="text-sm text-gray-700 mb-3 prose prose-sm max-w-none">
+                                    {!! $solarPowerDescription ?? 'Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.' !!}
+                                </div>
+                                <div class="flex items-baseline space-x-2">
+                                    <span class="text-sm text-gray-600">Price:</span>
+                                    <span class="text-2xl font-bold text-green-600">₦{{ number_format($solarPowerAmount, 2) }}</span>
+                                </div>
+                            </div>
                         </div>
-                    @endif
-
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div class="flex-1">
-                            <p class="text-sm font-medium text-gray-900">Solar Power Package</p>
-                            <p class="text-2xl font-bold text-gray-900 mt-1">₦{{ number_format($solarPowerAmount, 2) }}</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox"
-                                   name="solar_power"
-                                   value="1"
-                                   class="sr-only peer"
-                                   x-model="solarPower"
-                                   @change="updateTotal">
-                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                        </label>
                     </div>
                 </div>
             @endif
@@ -158,7 +198,7 @@
                         <span class="text-gray-600">Partnership Fee:</span>
                         <span class="font-medium text-gray-900" x-text="'₦' + modelPrice.toLocaleString('en-NG', {minimumFractionDigits: 2})"></span>
                     </div>
-                    <div x-show="solarPower" class="flex justify-between text-sm">
+                    <div x-show="solarPower === 'yes'" class="flex justify-between text-sm">
                         <span class="text-gray-600">Solar Power Package:</span>
                         <span class="font-medium text-gray-900">₦{{ number_format($solarPowerAmount, 2) }}</span>
                     </div>
@@ -200,7 +240,7 @@ function orderForm() {
         selectedModelName: '',
         modelPrice: 0,
         durationMonths: 12,
-        solarPower: false,
+        solarPower: 'no',
         solarPowerAmount: {{ $solarPowerAmount }},
         totalAmount: 0,
 
@@ -213,9 +253,13 @@ function orderForm() {
         },
 
         updateTotal() {
-            this.totalAmount = this.modelPrice + (this.solarPower ? this.solarPowerAmount : 0);
+            this.totalAmount = this.modelPrice + (this.solarPower === 'yes' ? this.solarPowerAmount : 0);
         }
     }
 }
 </script>
+
+<style>
+    [x-cloak] { display: none !important; }
+</style>
 @endsection

@@ -26,6 +26,9 @@ class SolarPowerSettingResource extends Resource
 
     protected static ?int $navigationSort = 7;
 
+    // Hide from navigation (commented out)
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Schema $schema): Schema
     {
         return $schema
