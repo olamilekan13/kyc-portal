@@ -92,18 +92,8 @@ class EditSystemSetting extends EditRecord
             }
         }
 
-        // For image type, FileUpload returns the path as string
-        // Ensure we store it as a string with the correct directory path
-        if (isset($this->record) && $this->record->type === 'image') {
-            if (isset($data['value'])) {
-                // FileUpload stores files in 'system-settings/' directory
-                // The value should already include the directory prefix
-                // If it's just a filename, prepend the directory
-                if (is_string($data['value']) && !str_starts_with($data['value'], 'system-settings/')) {
-                    $data['value'] = 'system-settings/' . $data['value'];
-                }
-            }
-        }
+        // For image type, FileUpload automatically handles the path correctly
+        // No need to manipulate it - Filament stores the full path with directory
 
         return $data;
     }
