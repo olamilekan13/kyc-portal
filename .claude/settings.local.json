@@ -38,7 +38,15 @@
       "Bash(if not exist \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\" mkdir \"c:\\laragon\\www\\kyc-portal\\storage\\app\\public\\system-images\")",
       "Bash(php migrate_solar_image.php:*)",
       "Bash(del:*)",
-      "Bash(php check_solar_image.php:*)"
+      "Bash(php check_solar_image.php:*)",
+      "Bash(php update_solar_description_richtext.php:*)",
+      "Bash(php diagnose_solar_image.php:*)",
+      "Bash(php check_setting_17.php:*)",
+      "Bash(php fix_richtext_null.php:*)",
+      "Bash(php debug_setting_17.php:*)",
+      "Bash(php test_tiptap_directly.php:*)",
+      "Bash(php set_null_value.php:*)",
+      "Bash(php:*)"
     ],
     "deny": [],
     "ask": []

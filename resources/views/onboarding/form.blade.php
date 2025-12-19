@@ -348,7 +348,9 @@
                             <img src="{{ $imagePath }}" alt="Solar Power" class="w-32 h-32 object-cover rounded-lg shadow-lg">
                             <div class="flex-1">
                                 <h4 class="text-lg font-bold text-gray-900 mb-2">{{ \App\Models\SystemSetting::get('solar_power_title', 'Solar Power Package') }}</h4>
-                                <p class="text-sm text-gray-700 mb-3">{{ $solarPowerDescription ?? 'Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.' }}</p>
+                                <div class="text-sm text-gray-700 mb-3 prose prose-sm max-w-none">
+                                    {!! $solarPowerDescription ?? 'Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.' !!}
+                                </div>
                                 <div class="flex items-baseline space-x-2">
                                     <span class="text-sm text-gray-600">Price:</span>
                                     <span class="text-2xl font-bold text-green-600">₦<span x-text="solarPowerAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')"></span></span>

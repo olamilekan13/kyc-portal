@@ -56,6 +56,7 @@ class SystemSettingResource extends Resource
                                 'number' => 'Number',
                                 'boolean' => 'Boolean',
                                 'textarea' => 'Textarea',
+                                'richtext' => 'Rich Text',
                                 'json' => 'JSON',
                                 'image' => 'Image',
                             ])
@@ -93,6 +94,32 @@ class SystemSettingResource extends Resource
                             ->rows(4)
                             ->required(fn ($get) => $get('type') === 'textarea')
                             ->dehydrated(fn ($get) => $get('type') === 'textarea')
+                            ->columnSpanFull(),
+
+                        FormFields\RichEditor::make('richtext_value')
+                            ->label('Value (Rich Text)')
+                            ->visible(fn ($get) => $get('type') === 'richtext')
+                            ->toolbarButtons([
+                                'bold',
+                                'italic',
+                                'underline',
+                                'bulletList',
+                                'orderedList',
+                                'link',
+                                'table',
+                                'h2',
+                                'h3',
+                                'undo',
+                                'redo',
+                            ])
+                            ->placeholder('Enter rich text content here...')
+                            ->afterStateHydrated(function ($component, $state) {
+                                // Ensure state is always valid HTML for TipTap
+                                if (is_null($state) || trim($state) === '') {
+                                    $component->state('<p></p>');
+                                }
+                            })
+                            ->dehydrated(false)
                             ->columnSpanFull(),
 
                         FormFields\Textarea::make('value')
@@ -179,6 +206,7 @@ class SystemSettingResource extends Resource
                     ->limit(50)
                     ->searchable()
                     ->wrap()
+                    ->formatStateUsing(fn ($state, $record) => $record->type === 'richtext' ? strip_tags($state) : $state)
                     ->visible(fn ($record) => !$record || !in_array($record->type, ['boolean', 'image'])),
 
                 Tables\Columns\TextColumn::make('description')
@@ -206,6 +234,7 @@ class SystemSettingResource extends Resource
                         'number' => 'Number',
                         'boolean' => 'Boolean',
                         'textarea' => 'Textarea',
+                        'richtext' => 'Rich Text',
                         'json' => 'JSON',
                         'image' => 'Image',
                     ]),

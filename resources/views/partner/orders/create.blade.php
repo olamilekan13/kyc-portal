@@ -93,7 +93,9 @@
             @if($solarPowerEnabled)
                 <div x-show="selectedModel" x-cloak class="bg-white shadow-md rounded-lg p-6">
                     <h2 class="text-xl font-semibold text-gray-900 mb-2">{{ $solarPowerTitle }}</h2>
-                    <p class="text-sm text-gray-600 mb-4">{{ $solarPowerDescription }}</p>
+                    <div class="text-sm text-gray-600 mb-4 prose prose-sm max-w-none">
+                        {!! $solarPowerDescription !!}
+                    </div>
 
                     @if($solarPowerImage)
                         <div class="mb-4">

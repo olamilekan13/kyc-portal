@@ -19,6 +19,22 @@ class SystemSetting extends Model
     ];
 
     /**
+     * Get the value attribute, ensuring richtext fields return null for empty values
+     */
+    public function getValueAttribute($value)
+    {
+        // For richtext fields, ensure empty strings are returned as null
+        // TipTap's state cast handles null correctly by using default empty document
+        if (isset($this->attributes['type']) && $this->attributes['type'] === 'richtext') {
+            if ($value === '') {
+                return null;
+            }
+        }
+
+        return $value;
+    }
+
+    /**
      * Get a setting value by key
      */
     public static function get(string $key, $default = null)
