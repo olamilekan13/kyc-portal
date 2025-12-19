@@ -83,6 +83,12 @@ class EditSystemSetting extends EditRecord
             if (isset($data['richtext_value'])) {
                 $data['value'] = $data['richtext_value'];
                 unset($data['richtext_value']); // Remove the temporary field
+            } else {
+                // If richtext_value is not set, ensure value is not null
+                // This can happen if the field wasn't touched
+                if (!isset($data['value'])) {
+                    $data['value'] = $this->record->getOriginal('value') ?? '<p></p>';
+                }
             }
         }
 

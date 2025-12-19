@@ -119,7 +119,7 @@ class SystemSettingResource extends Resource
                                     $component->state('<p></p>');
                                 }
                             })
-                            ->dehydrated(false)
+                            ->dehydrated(fn ($get) => $get('type') === 'richtext')
                             ->columnSpanFull(),
 
                         FormFields\Textarea::make('value')
