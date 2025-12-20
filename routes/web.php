@@ -121,7 +121,7 @@ Route::prefix('partner')->name('partner.')->group(function () {
     });
 
     // Protected routes (require authentication)
-    Route::middleware('auth:partner')->group(function () {
+    Route::middleware(['auth:partner', 'password.changed'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/continue-onboarding', [DashboardController::class, 'continueOnboarding'])->name('continue-onboarding');

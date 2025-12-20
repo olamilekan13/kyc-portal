@@ -80,10 +80,10 @@
                         </div>
                         <div class="ml-3">
                             <h3 class="text-sm font-medium text-yellow-800">
-                                Important: Save These Credentials
+                                {{ $credentialsTitle }}
                             </h3>
                             <div class="mt-2 text-sm text-yellow-700">
-                                <p>Please save your password in a secure location. These credentials have also been sent to your email address: <strong>{{ $email }}</strong></p>
+                                <p>{{ $credentialsMessage }} These credentials have also been sent to your email address: <strong>{{ $email }}</strong></p>
                             </div>
                         </div>
                     </div>

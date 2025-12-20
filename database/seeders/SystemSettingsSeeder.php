@@ -100,6 +100,22 @@ class SystemSettingsSeeder extends Seeder
                 'description' => 'Label displayed under the price in partnership model cards',
             ],
 
+            // Account Created Page Settings
+            [
+                'key' => 'account_created_credentials_title',
+                'value' => 'Important: Save These Credentials',
+                'type' => 'text',
+                'group' => 'account_created',
+                'description' => 'Title text shown in the credentials warning box on account created page',
+            ],
+            [
+                'key' => 'account_created_credentials_message',
+                'value' => 'Please save your password in a secure location.',
+                'type' => 'textarea',
+                'group' => 'account_created',
+                'description' => 'Message text shown in the credentials warning box on account created page',
+            ],
+
             // WhatsApp Settings
             [
                 'key' => 'whatsapp_business_number',

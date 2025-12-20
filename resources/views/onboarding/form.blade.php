@@ -336,8 +336,8 @@
                     </div>
 
                     <!-- Solar Power Details (shown when Yes is selected) -->
-                    <div x-show="solarPower === 'yes'" x-cloak class="mt-4 p-5 bg-gradient-to-r from-green-50 to-yellow-50 border border-green-200 rounded-xl">
-                        <div class="flex items-start space-x-4">
+                    <div x-show="solarPower === 'yes'" x-cloak class="mt-4 p-3 sm:p-5 bg-gradient-to-r from-green-50 to-yellow-50 border border-green-200 rounded-xl overflow-hidden">
+                        <div class="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                             @php
                                 $solarImage = \App\Models\SystemSetting::get('solar_power_image', 'images/solar_power.jpg');
                                 // If image is from Filament upload (stored in public disk), use storage path
@@ -345,15 +345,15 @@
                                     ? asset('storage/' . $solarImage)
                                     : asset($solarImage);
                             @endphp
-                            <img src="{{ $imagePath }}" alt="Solar Power" class="w-32 h-32 object-cover rounded-lg shadow-lg">
-                            <div class="flex-1">
-                                <h4 class="text-lg font-bold text-gray-900 mb-2">{{ \App\Models\SystemSetting::get('solar_power_title', 'Solar Power Package') }}</h4>
-                                <div class="text-sm text-gray-700 mb-3 prose prose-sm max-w-none">
+                            <img src="{{ $imagePath }}" alt="Solar Power" class="w-full sm:w-32 h-32 object-cover rounded-lg shadow-lg flex-shrink-0">
+                            <div class="flex-1 min-w-0 w-full overflow-hidden">
+                                <h4 class="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-2 break-words">{{ \App\Models\SystemSetting::get('solar_power_title', 'Solar Power Package') }}</h4>
+                                <div class="text-xs sm:text-sm text-gray-700 mb-3 solar-description">
                                     {!! $solarPowerDescription ?? 'Get reliable, clean energy for your operations with our solar power solution. This package includes installation and maintenance.' !!}
                                 </div>
-                                <div class="flex items-baseline space-x-2">
-                                    <span class="text-sm text-gray-600">Price:</span>
-                                    <span class="text-2xl font-bold text-green-600">₦<span x-text="solarPowerAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')"></span></span>
+                                <div class="flex items-baseline gap-1 sm:gap-2 flex-wrap">
+                                    <span class="text-xs sm:text-sm text-gray-600 flex-shrink-0">Price:</span>
+                                    <span class="text-lg sm:text-xl md:text-2xl font-bold text-green-600 break-all">₦<span x-text="solarPowerAmount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')"></span></span>
                                 </div>
                             </div>
                         </div>
@@ -403,5 +403,63 @@
 
 <style>
     [x-cloak] { display: none !important; }
+
+    /* Ensure text wraps properly on small devices */
+    .overflow-wrap-anywhere {
+        overflow-wrap: anywhere;
+        word-wrap: anywhere;
+        word-break: break-word;
+        hyphens: auto;
+    }
+
+    /* Fix prose overflow on mobile */
+    .prose {
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+
+    .prose p {
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+    }
+
+    /* Solar description specific fixes for very small screens */
+    .solar-description {
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        word-break: break-word;
+        hyphens: auto;
+        max-width: 100%;
+    }
+
+    .solar-description * {
+        overflow-wrap: break-word !important;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+        max-width: 100% !important;
+    }
+
+    .solar-description p {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .solar-description ul,
+    .solar-description ol {
+        padding-left: 1.25rem !important;
+        margin: 0.5rem 0 !important;
+    }
+
+    .solar-description li {
+        margin: 0.25rem 0 !important;
+    }
+
+    /* Ensure no horizontal overflow on very small screens */
+    @media (max-width: 400px) {
+        .solar-description {
+            font-size: 0.75rem !important;
+            line-height: 1.4 !important;
+        }
+    }
 </style>
 @endsection

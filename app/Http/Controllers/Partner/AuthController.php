@@ -116,6 +116,7 @@ class AuthController extends Controller
             function ($user, $password) {
                 $user->forceFill([
                     'password' => Hash::make($password),
+                    'password_changed' => true,
                     'remember_token' => Str::random(60),
                 ])->save();
             }
@@ -151,9 +152,10 @@ class AuthController extends Controller
             ]);
         }
 
-        // Update password
+        // Update password and mark as changed
         $partner->update([
             'password' => Hash::make($request->password),
+            'password_changed' => true,
         ]);
 
         Log::info('Partner password changed', [

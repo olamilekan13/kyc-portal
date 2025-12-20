@@ -287,17 +287,21 @@ class KycSubmissionController extends Controller
                     Log::error('Failed to send partner welcome email', [
                         'partner_user_id' => $partnerUser->id,
                         'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
                     ]);
                 }
 
                 DB::commit();
 
-                // Redirect to success page with credentials
-                return redirect()->route('kyc.account-created', [
-                    'submission' => $submission->id,
-                    'email' => $email,
-                    'password' => $plainPassword,
+                // Store credentials in session for security (avoid exposing password in URL)
+                session([
+                    'account_created_submission_id' => $submission->id,
+                    'account_created_email' => $email,
+                    'account_created_password' => $plainPassword,
                 ]);
+
+                // Redirect to success page without credentials in URL
+                return redirect()->route('kyc.account-created');
             } catch (Exception $e) {
                 DB::rollBack();
                 throw $e;
@@ -329,16 +333,21 @@ class KycSubmissionController extends Controller
     public function accountCreated(Request $request)
     {
         try {
-            $submissionId = $request->get('submission');
-            $email = $request->get('email');
-            $password = $request->get('password');
+            // Retrieve credentials from session (more secure than URL parameters)
+            $submissionId = session('account_created_submission_id');
+            $email = session('account_created_email');
+            $password = session('account_created_password');
 
             if (!$submissionId || !$email || !$password) {
-                abort(404, 'Invalid request');
+                abort(404, 'Invalid request. This page can only be accessed immediately after account creation.');
             }
 
             // Find submission
             $submission = KycSubmission::findOrFail($submissionId);
+
+            // Get dynamic settings for the page
+            $credentialsTitle = SystemSetting::get('account_created_credentials_title', 'Important: Save These Credentials');
+            $credentialsMessage = SystemSetting::get('account_created_credentials_message', 'Please save your password in a secure location.');
 
             Log::info('Account created page viewed', [
                 'submission_id' => $submissionId,
@@ -346,12 +355,18 @@ class KycSubmissionController extends Controller
                 'ip_address' => $request->ip(),
             ]);
 
+            // Clear the session data after retrieving it (one-time view)
+            // This prevents users from refreshing and seeing the password again
+            session()->forget(['account_created_submission_id', 'account_created_email', 'account_created_password']);
+
             // Return account created view with credentials
             return view('kyc.account-created', [
                 'submission' => $submission,
                 'email' => $email,
                 'password' => $password,
                 'loginUrl' => route('partner.login'),
+                'credentialsTitle' => $credentialsTitle,
+                'credentialsMessage' => $credentialsMessage,
             ]);
         } catch (Exception $e) {
             Log::error('Error displaying account created page', [

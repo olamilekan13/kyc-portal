@@ -16,6 +16,7 @@ class PartnerUser extends Authenticatable
         'kyc_submission_id',
         'email',
         'password',
+        'password_changed',
         'first_name',
         'last_name',
         'phone',
@@ -38,6 +39,7 @@ class PartnerUser extends Authenticatable
         'kyc_form_completed' => 'boolean',
         'onboarding_form_completed' => 'boolean',
         'payment_completed' => 'boolean',
+        'password_changed' => 'boolean',
     ];
 
     public function kycSubmission()
