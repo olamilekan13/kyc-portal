@@ -39,7 +39,7 @@ A new final onboarding form has been submitted and requires your attention.
 @endforeach
 @endif
 
-<x-mail::button :url="url('/admin/kyc-submissions/' . $kycSubmission->id)">
+<x-mail::button :url="route('filament.dashboard.resources.kyc-submissions.view', ['record' => $kycSubmission->id])">
 View Submission in Admin Panel
 </x-mail::button>
 

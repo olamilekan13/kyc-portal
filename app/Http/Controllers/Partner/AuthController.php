@@ -33,9 +33,25 @@ class AuthController extends Controller
         $remember = $request->boolean('remember');
 
         if (Auth::guard('partner')->attempt($credentials, $remember)) {
+            $partner = Auth::guard('partner')->user();
+
+            // Check if account is suspended
+            if ($partner->status === 'suspended') {
+                Auth::guard('partner')->logout();
+
+                Log::warning('Suspended partner attempted to login', [
+                    'partner_id' => $partner->id,
+                    'email' => $partner->email,
+                    'ip_address' => $request->ip(),
+                ]);
+
+                throw ValidationException::withMessages([
+                    'email' => ['Your account has been suspended. Please contact support for assistance.'],
+                ]);
+            }
+
             $request->session()->regenerate();
 
-            $partner = Auth::guard('partner')->user();
             $partner->update(['last_accessed_at' => now()]);
 
             Log::info('Partner logged in', [

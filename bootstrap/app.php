@@ -11,9 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Register middleware alias for password change enforcement
+        // Register middleware aliases
         $middleware->alias([
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
+            'partner.active' => \App\Http\Middleware\EnsurePartnerActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

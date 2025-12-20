@@ -19,11 +19,11 @@ class PartnerOrderResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $navigationLabel = 'Partner Orders';
+    protected static ?string $navigationLabel = 'Partners Additional Orders';
 
     protected static ?string $modelLabel = 'Partner Order';
 
-    protected static ?string $pluralModelLabel = 'Partner Orders';
+    protected static ?string $pluralModelLabel = 'Partners Additional Orders';
 
     protected static string|UnitEnum|null $navigationGroup = 'Partners';
 

@@ -44,7 +44,7 @@ A new payment has been submitted for final onboarding and requires your verifica
 *No additional form data submitted.*
 @endif
 
-<x-mail::button :url="url('/admin/final-onboarding')">
+<x-mail::button :url="route('filament.dashboard.resources.final-onboarding-forms.index')">
 View Payment in Admin Panel
 </x-mail::button>
 

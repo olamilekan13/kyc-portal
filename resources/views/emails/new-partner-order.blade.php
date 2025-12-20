@@ -51,7 +51,7 @@
     </div>
 
     <div style="text-align: center; margin: 30px 0;">
-        <a href="{{ url('/dashboard/partner-orders/' . $order->id) }}"
+        <a href="{{ route('filament.dashboard.resources.partner-orders.view', ['record' => $order->id]) }}"
            style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold;">
             View Order in Admin Panel
         </a>

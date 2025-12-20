@@ -57,7 +57,7 @@
     </div>
 
     <div style="text-align: center; margin: 30px 0;">
-        <a href="{{ url('/partner/orders/' . $order->id) }}"
+        <a href="{{ route('partner.orders.show', ['order' => $order->id]) }}"
            style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold;">
             View Order Details
         </a>
