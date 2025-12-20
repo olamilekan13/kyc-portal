@@ -469,20 +469,32 @@ class FinalOnboardingController extends Controller
                 $notificationEmail = SystemSetting::get('onboarding_notification_email')
                     ?? SystemSetting::get('admin_notification_email');
 
+                Log::info('Attempting to send payment submission notification', [
+                    'final_onboarding_id' => $finalOnboarding->id,
+                    'notification_email' => $notificationEmail,
+                    'has_payment_proof' => !empty($finalOnboarding->payment_proof),
+                    'payment_proof_path' => $finalOnboarding->payment_proof,
+                ]);
+
                 if ($notificationEmail) {
                     Mail::to($notificationEmail)->send(
                         new PaymentSubmissionNotification($kycSubmission, $finalOnboarding)
                     );
 
-                    Log::info('Payment submission notification email sent', [
+                    Log::info('Payment submission notification email sent successfully', [
                         'final_onboarding_id' => $finalOnboarding->id,
                         'recipient' => $notificationEmail,
+                    ]);
+                } else {
+                    Log::warning('No notification email configured for payment submission', [
+                        'final_onboarding_id' => $finalOnboarding->id,
                     ]);
                 }
             } catch (Exception $e) {
                 Log::error('Failed to send payment submission notification email', [
                     'final_onboarding_id' => $finalOnboarding->id,
                     'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
                 ]);
                 // Don't fail the request if email fails
             }

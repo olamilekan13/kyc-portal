@@ -59,11 +59,11 @@
     </div>
 
     <div style="text-align: center; margin: 30px 0;">
-        <a href="{{ route('partner.orders.show', ['order' => $order->id]) }}"
+        <a href="{{ $viewOrderUrl }}"
            style="display: inline-block; background-color: #2563eb; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold; margin-right: 10px;">
             View Order
         </a>
-        <a href="{{ route('partner.dashboard') }}"
+        <a href="{{ $dashboardUrl }}"
            style="display: inline-block; background-color: #6b7280; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 6px; font-weight: bold;">
             Go to Dashboard
         </a>

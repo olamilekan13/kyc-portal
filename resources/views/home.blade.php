@@ -104,6 +104,38 @@
             margin: 1.5em 0;
             color: #6b7280;
         }
+
+        /* Prevent overflow of long text like emails and URLs */
+        .prose {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+        }
+
+        /* Specifically handle links, emails, and code */
+        .prose a,
+        .prose code {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            hyphens: auto;
+        }
+
+        /* Responsive font sizes for very small screens */
+        @media (max-width: 380px) {
+            .prose {
+                font-size: 0.9rem;
+            }
+            .prose h1 {
+                font-size: 1.75rem;
+            }
+            .prose h2 {
+                font-size: 1.5rem;
+            }
+            .prose h3 {
+                font-size: 1.25rem;
+            }
+        }
     </style>
 </head>
 <body class="font-sans antialiased bg-gradient-to-br from-blue-50 via-white to-red-50">
@@ -186,7 +218,7 @@
                 <!-- Instructions / Content -->
                 @if($settings && $settings->instructions)
                     <div class="max-w-4xl mx-auto">
-                        <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100 hover:shadow-3xl transition-shadow duration-300">
+                        <div class="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl p-4 sm:p-6 md:p-12 border border-gray-100 hover:shadow-3xl transition-shadow duration-300">
                             <div class="prose prose-lg prose-headings:text-gray-900 prose-p:text-gray-600 prose-a:text-dmp-blue prose-strong:text-gray-900 prose-ul:text-gray-600 prose-ol:text-gray-600 max-w-none">
                                 {!! $settings->instructions !!}
                             </div>

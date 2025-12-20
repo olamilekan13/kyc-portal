@@ -14,10 +14,14 @@ class OrderRejectedMail extends Mailable
     use Queueable, SerializesModels;
 
     public $order;
+    public $viewOrderUrl;
+    public $dashboardUrl;
 
     public function __construct(PartnerOrder $order)
     {
         $this->order = $order;
+        $this->viewOrderUrl = route('partner.orders.show', ['order' => $order->id]);
+        $this->dashboardUrl = route('partner.dashboard');
     }
 
     public function envelope(): Envelope

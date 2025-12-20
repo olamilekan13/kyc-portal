@@ -74,10 +74,29 @@ class PaymentSubmissionNotification extends Mailable
         $attachments = [];
 
         // Attach payment proof if exists
-        if ($this->finalOnboarding->payment_proof && Storage::disk('local')->exists($this->finalOnboarding->payment_proof)) {
-            $attachments[] = Attachment::fromStorageDisk('local', $this->finalOnboarding->payment_proof)
-                ->as('payment_proof_' . $this->kycSubmission->onboarding_token . '.' . pathinfo($this->finalOnboarding->payment_proof, PATHINFO_EXTENSION))
-                ->withMime(Storage::disk('local')->mimeType($this->finalOnboarding->payment_proof));
+        try {
+            if ($this->finalOnboarding->payment_proof && Storage::disk('local')->exists($this->finalOnboarding->payment_proof)) {
+                $attachments[] = Attachment::fromStorageDisk('local', $this->finalOnboarding->payment_proof)
+                    ->as('payment_proof_' . $this->kycSubmission->onboarding_token . '.' . pathinfo($this->finalOnboarding->payment_proof, PATHINFO_EXTENSION))
+                    ->withMime(Storage::disk('local')->mimeType($this->finalOnboarding->payment_proof));
+
+                \Log::info('Payment proof attached to email', [
+                    'path' => $this->finalOnboarding->payment_proof,
+                    'onboarding_token' => $this->kycSubmission->onboarding_token,
+                ]);
+            } else {
+                \Log::warning('Payment proof file not found or not uploaded', [
+                    'payment_proof_path' => $this->finalOnboarding->payment_proof,
+                    'onboarding_token' => $this->kycSubmission->onboarding_token,
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to attach payment proof to email', [
+                'error' => $e->getMessage(),
+                'payment_proof_path' => $this->finalOnboarding->payment_proof,
+                'onboarding_token' => $this->kycSubmission->onboarding_token,
+            ]);
+            // Continue without attachment if it fails
         }
 
         return $attachments;
